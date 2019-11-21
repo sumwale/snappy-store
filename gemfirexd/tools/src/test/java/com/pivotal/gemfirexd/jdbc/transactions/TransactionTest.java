@@ -389,6 +389,8 @@ public class TransactionTest extends JdbcTestBase {
     rs.close();
     st2.close();
     conn.commit();
+    st.execute("drop table tran.t1");
+    st.execute("drop schema tran restrict");
     conn.close();
   }
 
@@ -603,8 +605,10 @@ public class TransactionTest extends JdbcTestBase {
     this.doOffHeapValidations();
     assertEquals("Numbers of rows in resultset should be one", 1, numRows);
     rs.close();
-    st.close();
     conn.commit();
+    st.execute("drop table test.t1");
+    st.execute("drop schema test restrict");
+    st.close();
     conn.close();
     
   }
@@ -631,8 +635,11 @@ public class TransactionTest extends JdbcTestBase {
       numRows++;
     }
     assertEquals("ResultSet should have zero rows", 0, numRows);
-    st.close();
     conn.commit();
+    st.execute("drop table test.t1");
+    st.execute("drop schema test restrict");
+    st.close();
+
   }
 
   /**
@@ -686,6 +693,9 @@ public class TransactionTest extends JdbcTestBase {
     assertNull(GfxdConnectionHolder.getHolder().getConnectionID(tid));
     */
     conn.commit();
+    st.execute("drop table trade.securities");
+    st.execute("drop schema trade restrict");
+
   }
 
   /**
@@ -756,8 +766,11 @@ public class TransactionTest extends JdbcTestBase {
       numRows++;
     }
     assertEquals("Should return 1000 rows ", rows, numRows);
-    st.close();
     conn.commit();
+    st.execute("drop table test.t1");
+    st.execute("drop schema test restrict");
+    st.close();
+
   }
 
   /**
@@ -833,6 +846,8 @@ public class TransactionTest extends JdbcTestBase {
     assertFalse(rs.next());
     conn.commit();
     rs.close();
+    st.execute("drop table tran.t1");
+    st.execute("drop schema tran restrict");
     st.close();
     conn.close();
   }
@@ -872,7 +887,8 @@ public class TransactionTest extends JdbcTestBase {
     } finally {
       GemFireXDQueryObserverHolder.removeObserver(checkIndex);      
     }
-    
+    st.execute("drop table tran.t1");
+    st.execute("drop schema tran restrict");
     st.close();
     conn.close();    
   }
@@ -906,6 +922,8 @@ public class TransactionTest extends JdbcTestBase {
       }
     }
     conn.rollback();
+    st.execute("drop table tran.t1");
+    st.execute("drop schema tran restrict");
     conn.close();
     /*
     final CheckIndexOperations checkIndex = new CheckIndexOperations(
@@ -1018,6 +1036,8 @@ public class TransactionTest extends JdbcTestBase {
     st.close();
     psUpdate.close();
     ps.close();
+    st.execute("drop table trade.securities");
+    st.execute("drop schema trade restrict");
     conn.close();
   }  
 
@@ -1918,8 +1938,10 @@ public class TransactionTest extends JdbcTestBase {
           + ", " + rs.getObject(6) + ", " + rs.getObject(7));
     }
     assertEquals(1, sel_cnt);
-
     conn.commit();
+    stmt.execute("drop table txn.customer");
+    stmt.execute("drop schema txn restrict");
+
   }
 
   public void testTxnUpdateGettingLostBug_43222() throws Exception {
@@ -1991,8 +2013,9 @@ public class TransactionTest extends JdbcTestBase {
     }
 
     assertEquals(1, sel_cnt);
-
     conn.commit();
+    stmt.execute("drop table txn.customer");
+    stmt.execute("drop schema txn restrict");
   }
 
   public void testDeleteLockBeforeReferenceKeyCheck() throws Exception {
@@ -2093,6 +2116,8 @@ public class TransactionTest extends JdbcTestBase {
     assertTrue(rs.next());
     assertEquals(-100.0, rs.getDouble(6));
     assertFalse(rs.next());
+    stmt.execute("drop table txn.customer");
+    stmt.execute("drop schema txn restrict");
   }
 
   class ObserverForBug43152 extends GemFireXDQueryObserverAdapter {
@@ -2255,6 +2280,8 @@ public class TransactionTest extends JdbcTestBase {
     GemFireXDQueryObserverHolder.putInstance(observer);
     conn.commit();
     assertFalse(observer.wasMethodCalled());
+    st.execute("drop table tran.t1");
+    st.execute("drop schema tran restrict");
   }
 
   public void testPkNonPkUpdates() throws Exception {
