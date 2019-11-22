@@ -385,12 +385,11 @@ public class TransactionTest extends JdbcTestBase {
       assertEquals("Second columns should be 10 , ", 10, rs.getInt(2));
     }
     assertEquals("ResultSet should have two rows ", 1, numRow);
-
     rs.close();
-    st2.close();
     conn.commit();
-    st.execute("drop table tran.t1");
-    st.execute("drop schema tran restrict");
+    st2.execute("drop table tran.t1");
+    st2.execute("drop schema tran restrict");
+    st2.close();
     conn.close();
   }
 
@@ -1033,11 +1032,11 @@ public class TransactionTest extends JdbcTestBase {
     conn.commit();
     rs.close();
     this.doOffHeapValidations();
-    st.close();
     psUpdate.close();
     ps.close();
     st.execute("drop table trade.securities");
     st.execute("drop schema trade restrict");
+    st.close();
     conn.close();
   }  
 
