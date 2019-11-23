@@ -144,8 +144,8 @@ public class StatementFinder {
 			String basePath, Map<String, String> params) {
 // GemStone changes BEGIN
 		this.consoleReader = (ConsoleReader)s.getConsoleReader();
-		if (JDBCDisplayUtil.INTERPRETER_MODE) {
-			this.consoleReader.setCopyPasteDetection(true);
+		if (JDBCDisplayUtil.INTERPRETER_MODE && this.consoleReader != null) {
+		   this.consoleReader.setCopyPasteDetection(true);
 		}
 		this.basePath = basePath;
 		this.params = params;
@@ -177,7 +177,7 @@ public class StatementFinder {
 		}
 // GemStone changes BEGIN
 		this.consoleReader = (ConsoleReader)s.getConsoleReader();
-		if (JDBCDisplayUtil.INTERPRETER_MODE) {
+		if (JDBCDisplayUtil.INTERPRETER_MODE && this.consoleReader != null) {
 			this.consoleReader.setCopyPasteDetection(true);
 		}
 // GemStone changes END
