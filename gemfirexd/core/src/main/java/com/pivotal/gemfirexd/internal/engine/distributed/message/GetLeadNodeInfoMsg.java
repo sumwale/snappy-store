@@ -132,9 +132,13 @@ public class GetLeadNodeInfoMsg extends MemberExecutorMessage<Object> {
     }
     File file = new File(filePath);
     FileInputStream fip = new FileInputStream(file);
-    byte fileContent[] = new byte[(int)file.length()];
-    fip.read(fileContent);
-    return fileContent;
+    try {
+      byte fileContent[] = new byte[(int) file.length()];
+      fip.read(fileContent);
+      return fileContent;
+    } finally {
+      if (fip != null) fip.close();
+    }
   }
 
   private String exportData() {
