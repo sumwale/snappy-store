@@ -100,11 +100,12 @@ namespace io {
               m_serverGroups(std::set<std::string>()), m_framedTransport(false) {
           }
 
-          ControlConnection(ClientService * const &service);
+          ControlConnection(ClientService* service);
 
           void failoverToAvailableHost(
               std::set<thrift::HostAddress>& failedServers,
-              bool checkFailedControlHosts, const std::exception& failure);
+              bool checkFailedControlHosts, const std::exception& failure,
+              ClientService* service);
 
           void refreshAllHosts(
               const std::vector<thrift::HostAddress>& allHosts);
@@ -121,18 +122,20 @@ namespace io {
               std::set<std::string> serverGroups);
 
           void getPreferredServer(thrift::HostAddress& preferredServer,
-              const std::exception& failure, bool forFailover = false);
+              const std::exception& failure, ClientService* service,
+              bool forFailover = false);
 
         public:
 
           static const boost::optional<ControlConnection&> getOrCreateControlConnection(
               const std::vector<thrift::HostAddress>& hostAddrs,
-              ClientService * const &service, const std::exception& failure);
+              ClientService* service, const std::exception& failure);
 
           void getPreferredServer(thrift::HostAddress& preferredServer,
               const std::exception& failure,
               std::set<thrift::HostAddress>& failedServers,
-              std::set<std::string>& serverGroups, bool forFailover = false);
+              std::set<std::string>& serverGroups, ClientService* service,
+              bool forFailover = false);
 
           void searchRandomServer(
               const std::set<thrift::HostAddress>& skipServers,
