@@ -281,8 +281,16 @@ public abstract class Misc {
    * @return Optional of DistributedMember representing primary lead node if primary lead exists in cluster
    *         Optional#empty if primary lead node does not exist in cluster
    */
-  public static Optional<DistributedMember> getPrimaryLead(){
-    return getLeadNodes().stream().filter(dm -> GemFireXDUtils.getGfxdProfile(dm).hasSparkURL()).findFirst();
+  public static Optional<DistributedMember> getPrimaryLead() {
+    try {
+      return getLeadNodes().stream().filter(dm -> GemFireXDUtils.getGfxdProfile(dm).hasSparkURL()).findFirst();
+    } catch (NoMemberFoundException ex) {
+      if (ex.getMessage().equals("SnappyData Lead node is not available")) {
+        return Optional.empty();
+      } else {
+        throw ex;
+      }
+    }
   }
 
   /**
