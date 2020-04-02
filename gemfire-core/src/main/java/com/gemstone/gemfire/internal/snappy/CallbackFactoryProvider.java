@@ -123,7 +123,8 @@ public abstract class CallbackFactoryProvider {
     }
 
     @Override
-    public void waitForRuntimeManager(long maxWaitMillis) {
+    public boolean waitForRuntimeManager(long maxWaitMillis) {
+      return false;
     }
 
     @Override

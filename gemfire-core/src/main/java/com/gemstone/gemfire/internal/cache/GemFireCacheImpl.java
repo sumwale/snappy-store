@@ -36,7 +36,7 @@
 package com.gemstone.gemfire.internal.cache;
 
 import java.io.*;
-import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
 import java.net.URL;
@@ -1452,8 +1452,7 @@ public class GemFireCacheImpl implements InternalCache, ClientCache, HasCachePer
       String memorySizeStr = getSystem().getConfig().getMemorySize();
       long memorySize = ClientSharedUtils.parseMemorySize(memorySizeStr, 0L, 0);
       boolean usingDefaultMemorySize = false;
-      if (memorySize == 0 && (memorySizeStr == null || memorySizeStr.isEmpty())
-          && GemFireVersion.isEnterpriseEdition()) {
+      if (memorySize == 0 && (memorySizeStr == null || memorySizeStr.isEmpty())) {
         memorySize = getDefaultOffHeapSize();
         if (memorySize > 0) {
           getLogger().info("Using default off-heap size = " +
@@ -1468,22 +1467,17 @@ public class GemFireCacheImpl implements InternalCache, ClientCache, HasCachePer
             callbacks.getStoragePoolSize(true);
       }
       if (memorySize > 0) {
-        if (!GemFireVersion.isEnterpriseEdition()) {
-          throw new IllegalArgumentException("The off-heap column store (enabled by property " +
-              "memory-size) is not supported in SnappyData OSS version.");
-        }
         BufferAllocator bufferAllocator;
         try {
-          Class<?> clazz = Class.forName("com.gemstone.gemfire.internal.cache.store.ManagedDirectBufferAllocator");
-          Method method = clazz.getDeclaredMethod("instance");
-          bufferAllocator = (DirectBufferAllocator)method.invoke(null);
+          Class<?> clazz = Class.forName("org.apache.spark.memory.UMMBufferAllocator$");
+          Field f = clazz.getField("MODULE$");
+          bufferAllocator = (DirectBufferAllocator)f.get(null);
           // test availability of configured memory-size
           getLogger().info("Configuring off-heap memory-size = " + memorySize);
           long address = UnsafeHolder.getUnsafe().allocateMemory(memorySize);
           UnsafeHolder.getUnsafe().freeMemory(address);
           getLogger().info("Enabled memory-size = " + memorySize);
-        } catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException |
-            InvocationTargetException e) {
+        } catch (ClassNotFoundException | NoSuchFieldException | IllegalAccessException e) {
           if (usingDefaultMemorySize) {
             memorySize = 0;
             bufferAllocator = HeapBufferAllocator.instance();

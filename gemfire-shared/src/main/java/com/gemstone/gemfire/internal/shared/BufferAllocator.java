@@ -20,7 +20,6 @@ import java.io.Closeable;
 import java.nio.ByteBuffer;
 
 import com.gemstone.gemfire.internal.shared.unsafe.DirectBufferAllocator;
-import com.gemstone.gemfire.internal.shared.unsafe.FreeMemory;
 import com.gemstone.gemfire.internal.shared.unsafe.UnsafeHolder;
 
 /**
@@ -33,7 +32,7 @@ public abstract class BufferAllocator implements Closeable {
 
   // Same as jemalloc's debug fill values.
   public static final byte MEMORY_DEBUG_FILL_CLEAN_VALUE = (byte)0xa5;
-  // @SuppressWarnings("WeakerAccess")
+  @SuppressWarnings("WeakerAccess")
   public static final byte MEMORY_DEBUG_FILL_FREED_VALUE = (byte)0x5a;
 
   public static final String STORE_DATA_FRAME_OUTPUT =
@@ -182,16 +181,6 @@ public abstract class BufferAllocator implements Closeable {
    */
   public boolean isManagedDirect() {
     return false;
-  }
-
-  /**
-   * Allocate a buffer passing a custom FreeMemoryFactory. Requires that
-   * appropriate calls against Spark memory manager have already been done.
-   * Only for managed buffer allocator.
-   */
-  public ByteBuffer allocateCustom(int size,
-      FreeMemory.Factory factory) {
-    throw new UnsupportedOperationException("Not supported for " + toString());
   }
 
   /**

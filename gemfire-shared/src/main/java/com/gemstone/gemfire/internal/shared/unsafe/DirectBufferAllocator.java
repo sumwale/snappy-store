@@ -127,18 +127,12 @@ public class DirectBufferAllocator extends BufferAllocator {
     final int currentUsed = buffer.limit();
     if (currentUsed + required > buffer.capacity()) {
       final int newLength = BufferAllocator.expandedSize(currentUsed, required);
-      final ByteBuffer newBuffer = ByteBuffer.allocateDirect(newLength)
-          .order(buffer.order());
+      final ByteBuffer newBuffer = (DIRECT_STORE_OBJECT_OWNER.equals(owner)
+          ? allocateForStorage(newLength) : allocate(newLength, owner)).order(buffer.order());
       buffer.rewind();
       newBuffer.put(buffer);
       UnsafeHolder.releaseDirectBuffer(buffer);
       newBuffer.rewind(); // position at start as per the contract of expand
-      if (BufferAllocator.MEMORY_DEBUG_FILL_ENABLED) {
-        // fill the remaining bytes
-        ByteBuffer buf = newBuffer.duplicate();
-        buf.position(currentUsed);
-        fill(buf, BufferAllocator.MEMORY_DEBUG_FILL_CLEAN_VALUE);
-      }
       return newBuffer;
     } else {
       buffer.limit(currentUsed + required);
