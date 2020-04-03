@@ -52,17 +52,14 @@ public class DirectBufferAllocator extends BufferAllocator {
     return instance;
   }
 
-  public DirectBufferAllocator initialize() {
-    DirectBufferAllocator.setInstance(this);
-    return this;
-  }
-
   public static synchronized void setInstance(DirectBufferAllocator allocator) {
     instance = allocator;
   }
 
-  public static synchronized void resetInstance() {
-    instance = globalInstance;
+  public static synchronized void resetInstance(DirectBufferAllocator expected) {
+    if (expected == null || expected == instance) {
+      instance = globalInstance;
+    }
   }
 
   protected DirectBufferAllocator() {

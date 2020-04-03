@@ -36,7 +36,6 @@
 package com.gemstone.gemfire.internal.cache;
 
 import java.io.*;
-import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
 import java.net.URL;
@@ -1467,27 +1466,24 @@ public class GemFireCacheImpl implements InternalCache, ClientCache, HasCachePer
             callbacks.getStoragePoolSize(true);
       }
       if (memorySize > 0) {
-        BufferAllocator bufferAllocator;
+        BufferAllocator bufferAllocator = null;
         try {
-          Class<?> clazz = Class.forName("org.apache.spark.memory.UMMBufferAllocator$");
-          Field f = clazz.getField("MODULE$");
-          bufferAllocator = (DirectBufferAllocator)f.get(null);
-          // test availability of configured memory-size
-          getLogger().info("Configuring off-heap memory-size = " + memorySize);
-          long address = UnsafeHolder.getUnsafe().allocateMemory(memorySize);
-          UnsafeHolder.getUnsafe().freeMemory(address);
-          getLogger().info("Enabled memory-size = " + memorySize);
-        } catch (ClassNotFoundException | NoSuchFieldException | IllegalAccessException e) {
-          if (usingDefaultMemorySize) {
-            memorySize = 0;
-            bufferAllocator = HeapBufferAllocator.instance();
-          } else {
+          Iterator<BufferAllocator> allocators = ServiceLoader.load(
+              BufferAllocator.class, getClass().getClassLoader()).iterator();
+          if (allocators.hasNext()) {
+            bufferAllocator = allocators.next();
+            // test availability of configured memory-size
+            getLogger().info("Configuring off-heap memory-size = " + memorySize);
+            long address = UnsafeHolder.getUnsafe().allocateMemory(memorySize);
+            UnsafeHolder.getUnsafe().freeMemory(address);
+            getLogger().info("Enabled memory-size = " + memorySize);
+          }
+        } catch (RuntimeException e) {
+          if (!usingDefaultMemorySize) {
             throw new IllegalStateException("Could not configure managed buffer allocator.", e);
           }
         } catch (OutOfMemoryError oome) {
           if (usingDefaultMemorySize) {
-            memorySize = 0;
-            bufferAllocator = HeapBufferAllocator.instance();
             // log an error
             getLogger().error("DISABLED off-heap because default memory-size = " +
                 memorySize + " cannot be allocated: " + oome);
@@ -1496,8 +1492,13 @@ public class GemFireCacheImpl implements InternalCache, ClientCache, HasCachePer
                 " is too large: " + oome + ". Please configure a lower value.");
           }
         }
-        this.memorySize = memorySize;
-        this.bufferAllocator = bufferAllocator;
+        if (bufferAllocator != null) {
+          this.memorySize = memorySize;
+          this.bufferAllocator = bufferAllocator;
+        } else {
+          this.memorySize = 0;
+          this.bufferAllocator = HeapBufferAllocator.instance();
+        }
       } else if (memorySize < 0) {
         throw new IllegalArgumentException("Invalid memory-size: " + memorySizeStr);
       } else {
@@ -2216,7 +2217,7 @@ public class GemFireCacheImpl implements InternalCache, ClientCache, HasCachePer
     }
 
     // reset the DirectBufferAllocator before marking as closed
-    DirectBufferAllocator.resetInstance();
+    DirectBufferAllocator.resetInstance(null);
 
     GemFireCacheImpl.instance = null;
     GemFireCacheImpl.pdxInstance = null;
@@ -2622,7 +2623,7 @@ public class GemFireCacheImpl implements InternalCache, ClientCache, HasCachePer
       }
 
       // reset the DirectBufferAllocator before marking as closed
-      DirectBufferAllocator.resetInstance();
+      DirectBufferAllocator.resetInstance(null);
 
       isClosing = true;
 
