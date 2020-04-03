@@ -56,10 +56,8 @@ public class DirectBufferAllocator extends BufferAllocator {
     instance = allocator;
   }
 
-  public static synchronized void resetInstance(DirectBufferAllocator expected) {
-    if (expected == null || expected == instance) {
-      instance = globalInstance;
-    }
+  public static synchronized void resetInstance() {
+    instance = globalInstance;
   }
 
   protected DirectBufferAllocator() {

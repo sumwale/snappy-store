@@ -2217,7 +2217,7 @@ public class GemFireCacheImpl implements InternalCache, ClientCache, HasCachePer
     }
 
     // reset the DirectBufferAllocator before marking as closed
-    DirectBufferAllocator.resetInstance(null);
+    DirectBufferAllocator.resetInstance();
 
     GemFireCacheImpl.instance = null;
     GemFireCacheImpl.pdxInstance = null;
@@ -2623,7 +2623,7 @@ public class GemFireCacheImpl implements InternalCache, ClientCache, HasCachePer
       }
 
       // reset the DirectBufferAllocator before marking as closed
-      DirectBufferAllocator.resetInstance(null);
+      DirectBufferAllocator.resetInstance();
 
       isClosing = true;
 

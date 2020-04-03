@@ -25,18 +25,18 @@ public abstract class FreeMemory extends AtomicLong implements Runnable {
     super(address);
   }
 
-  protected final long tryFree() {
+  protected final long getAndResetAddress() {
     // try hard to ensure freeMemory call happens only once
     final long address = get();
-    return (address != 0 && compareAndSet(address, 0L)) ? address : 0L;
+    return (address != 0L && compareAndSet(address, 0L)) ? address : 0L;
   }
 
-  protected abstract String objectName();
+  protected abstract String owner();
 
   @Override
   public void run() {
-    final long address = tryFree();
-    if (address != 0) {
+    final long address = getAndResetAddress();
+    if (address != 0L) {
       UnsafeHolder.getUnsafe().freeMemory(address);
     }
   }

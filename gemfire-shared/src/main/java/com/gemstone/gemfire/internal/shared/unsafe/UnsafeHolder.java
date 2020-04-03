@@ -291,7 +291,7 @@ public abstract class UnsafeHolder {
         // use the efficient realloc call if possible
         // and clear address so that cleaner.clean() below does nothing
         if ((freeMemory instanceof FreeMemory) &&
-            (address = ((FreeMemory)freeMemory).tryFree()) != 0L) {
+            (address = ((FreeMemory)freeMemory).getAndResetAddress()) != 0L) {
           newAddress = getUnsafe().reallocateMemory(address, newSize);
         }
       } catch (IllegalAccessException e) {
@@ -341,7 +341,7 @@ public abstract class UnsafeHolder {
       if (!to.isInstance(runnable)) {
         if (changeOwner != null) {
           if (from.isInstance(runnable)) {
-            changeOwner.accept(((FreeMemory)runnable).objectName(), runnable);
+            changeOwner.accept(((FreeMemory)runnable).owner(), runnable);
           } else {
             changeOwner.accept(null, runnable);
           }
