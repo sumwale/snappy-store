@@ -73,7 +73,7 @@ shadowJar {
   dependsOn jar
   baseName = 'snappydata-client'
   classifier = ''
-  // avoid conflict with the older incompatible thrift versions
+  // avoid conflict with older incompatible thrift versions in classpath
   relocate 'org.apache.thrift', 'io.snappydata.org.apache.thrift'
 
   mergeServiceFiles()
