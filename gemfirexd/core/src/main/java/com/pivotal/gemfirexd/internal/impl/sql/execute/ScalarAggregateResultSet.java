@@ -117,9 +117,9 @@ class ScalarAggregateResultSet extends GenericAggregateResultSet
 		sortTemplateRow = getExecutionFactory().getIndexableRow((ExecRow) rowAllocator.invoke(activation));
 		this.singleInputRow = singleInputRow;
 
-		if (SanityManager.DEBUG)
+		if (SanityManager.DEBUG_ON("AggregateTrace"))
 		{
-			SanityManager.DEBUG("AggregateTrace","execution time: "+ 
+			SanityManager.DEBUG_PRINT("AggregateTrace","execution time: " +
 					a.getSavedObject(aggregateItem));
 		}
 		recordConstructorTime();

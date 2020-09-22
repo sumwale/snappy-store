@@ -95,7 +95,6 @@ import com.gemstone.gemfire.internal.offheap.annotations.Released;
 import com.gemstone.gemfire.internal.offheap.annotations.Retained;
 import com.gemstone.gemfire.internal.sequencelog.EntryLogger;
 import com.gemstone.gemfire.internal.shared.ClientSharedUtils;
-import com.gemstone.gemfire.internal.shared.NativeCalls;
 import com.gemstone.gemfire.internal.shared.UnsupportedGFXDVersionException;
 import com.gemstone.gemfire.internal.shared.Version;
 import com.gemstone.gemfire.internal.shared.unsafe.ChannelBufferUnsafeDataInputStream;
@@ -6324,7 +6323,11 @@ public final class Oplog implements CompactableOplog {
         }
       }
       if (doSync) {
-        if (dofsync && !DiskStoreImpl.DISABLE_SYNC_WRITES_FOR_TESTS) {
+        // Files have already been opened in "rwd" mode if fsync is enabled for
+        // the disk store. This additional force flush with metadata=true is
+        // when the global flag "gemfire.syncWrites" is also set.
+        if (dofsync && DiskStoreFactory.GLOBAL_SYNC_WRITES &&
+            !DiskStoreImpl.DISABLE_SYNC_WRITES_FOR_TESTS) {
           // Synch Meta Data as well as content
           olf.channel.force(true);
         }

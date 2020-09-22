@@ -67,7 +67,7 @@ public class DiskStoreAttributes implements Serializable, DiskStore {
     this.queueSize = DiskStoreFactory.DEFAULT_QUEUE_SIZE;
     this.diskDirs = DiskStoreFactory.DEFAULT_DISK_DIRS;
     this.diskDirSizes = DiskStoreFactory.DEFAULT_DISK_DIR_SIZES;
-    this.syncWrites = DiskStoreFactory.DEFAULT_SYNC_WRITES;
+    this.syncWrites = DiskStoreFactory.GLOBAL_SYNC_WRITES;
   }
 
   public UUID getDiskStoreUUID() {

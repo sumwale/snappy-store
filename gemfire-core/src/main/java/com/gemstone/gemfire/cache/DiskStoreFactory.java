@@ -100,11 +100,10 @@ public interface DiskStoreFactory
   public static final int[] DEFAULT_DISK_DIR_SIZES = new int[] {DEFAULT_DISK_DIR_SIZE};
 
   /**
-   * The default for {@link #setSyncWrites(boolean)} set as per system property
-   * "gemfire.syncWrites" that instructs that writes be synchronously written to
-   * disk and not to file system.
+   * The global default for {@link #setSyncWrites(boolean)} set as per system property
+   * "gemfire.syncWrites" that performs an explicit fsync after a disk write.
    */
-  public static final boolean DEFAULT_SYNC_WRITES = Boolean
+  public static final boolean GLOBAL_SYNC_WRITES = Boolean
       .getBoolean("gemfire.syncWrites");
 
   /** 
