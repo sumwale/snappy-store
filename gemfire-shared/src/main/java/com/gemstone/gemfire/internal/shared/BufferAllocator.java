@@ -71,8 +71,15 @@ public abstract class BufferAllocator implements Closeable {
    * Fill the given portion of the buffer setting it with given byte.
    */
   public final void fill(ByteBuffer buffer, byte b, int position, int numBytes) {
-    UnsafeHolder.getUnsafe().setMemory(baseObject(buffer),
-        baseOffset(buffer) + position, numBytes, b);
+    if (UnsafeHolder.hasUnsafe()) {
+      UnsafeHolder.getUnsafe().setMemory(baseObject(buffer),
+	  baseOffset(buffer) + position, numBytes, b);
+    } else {
+      final int endPosition = position + numBytes;
+      for (int index = position; index < endPosition; index++) {
+        buffer.put(index, b);
+      }
+    }
   }
 
   /**

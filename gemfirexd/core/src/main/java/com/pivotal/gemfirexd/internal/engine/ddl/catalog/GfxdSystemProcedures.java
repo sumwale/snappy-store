@@ -46,7 +46,6 @@ import com.gemstone.gemfire.internal.NanoTimer;
 import com.gemstone.gemfire.internal.cache.*;
 import com.gemstone.gemfire.internal.cache.control.InternalResourceManager;
 import com.gemstone.gemfire.internal.cache.persistence.query.CloseableIterator;
-import com.gemstone.gemfire.internal.i18n.LocalizedStrings;
 import com.gemstone.gemfire.internal.snappy.CallbackFactoryProvider;
 import com.gemstone.gemfire.internal.snappy.ColumnTableEntry;
 import com.gemstone.gnu.trove.TIntArrayList;
@@ -70,7 +69,7 @@ import com.pivotal.gemfirexd.internal.engine.distributed.GfxdListResultCollector
 import com.pivotal.gemfirexd.internal.engine.distributed.GfxdMessage;
 import com.pivotal.gemfirexd.internal.engine.distributed.QueryCancelFunction;
 import com.pivotal.gemfirexd.internal.engine.distributed.QueryCancelFunction.QueryCancelFunctionArgs;
-import com.pivotal.gemfirexd.internal.engine.distributed.message.GetLeadNodeInfoAsStringMessage;
+import com.pivotal.gemfirexd.internal.engine.distributed.message.GetLeadNodeInfoMsg;
 import com.pivotal.gemfirexd.internal.engine.distributed.utils.GemFireXDUtils;
 import com.pivotal.gemfirexd.internal.engine.distributed.utils.SecurityUtils;
 import com.pivotal.gemfirexd.internal.engine.jdbc.GemFireXDRuntimeException;
@@ -1204,7 +1203,8 @@ public class GfxdSystemProcedures extends SystemProcedures {
    * The "exportAll" parameter allows exporting everything including
    * configuration commands using system procedures.
    */
-  public static void EXPORT_DDLS(final Boolean exportAll, final ResultSet[] rs)
+  public static void EXPORT_ALL_DDLS(final Boolean exportAll,
+      final ResultSet[] rs)
       throws SQLException, StandardException, CacheException,
       InterruptedException {
     // take the read lock on DataDictionary to flush any existing DDLs
@@ -1538,12 +1538,94 @@ public class GfxdSystemProcedures extends SystemProcedures {
             "executing GET_DEPLOYED_JARS");
       }
       GfxdListResultCollector collector = new GfxdListResultCollector();
-      GetLeadNodeInfoAsStringMessage msg = new GetLeadNodeInfoAsStringMessage(
-          collector, GetLeadNodeInfoAsStringMessage.DataReqType.GET_JARS, (Object[])null);
+      // ConnectionId is not being used for GET_DEPLOYED_JARS; hence passing dummy value(0L)
+      GetLeadNodeInfoMsg msg = new GetLeadNodeInfoMsg(
+          collector, GetLeadNodeInfoMsg.DataReqType.GET_JARS, 0L, (Object[])null);
       msg.executeFunction();
       ArrayList<Object> result = collector.getResult();
       String resJarStrings = (String)result.get(0);
       jarStrings[0] = resJarStrings;
+    } catch (StandardException se) {
+      throw PublicAPI.wrapStandardException(se);
+    }
+  }
+
+  public static void CHECK_AUTHZ_ON_EXT_TABLES(String currentUser,
+     String allTableString, String[] resultDetails) throws SQLException {
+    try {
+      if (GemFireXDUtils.TraceSysProcedures) {
+        SanityManager.DEBUG_PRINT(GfxdConstants.TRACE_SYS_PROCEDURES,
+                "executing CHECK_AUTHZ_ON_EXT_TABLES");
+      }
+      GfxdListResultCollector collector = new GfxdListResultCollector();
+      // ConnectionId is not being used for GET_DEPLOYED_JARS; hence passing dummy value(0L)
+      GetLeadNodeInfoMsg msg = new GetLeadNodeInfoMsg(
+          collector, GetLeadNodeInfoMsg.DataReqType.CHECK_EXT_TABLE_PERMISSION,
+              0L, new Object[] {currentUser, allTableString});
+      msg.executeFunction();
+      ArrayList<Object> result = collector.getResult();
+      String res = (String)result.get(0);
+      resultDetails[0] = res;
+    } catch (StandardException se) {
+      throw PublicAPI.wrapStandardException(se);
+    }
+  }
+
+  /**
+   * A recovery mode procedure which allows the user to export the specified(all) tables/views
+   * in the specified format at the specified location.
+   *
+   * @param exportUri
+   * @param formatType any format supported by the spark dataframe api
+   * @param tableNames comma separated list of fully qualified table names OR all
+   * @param ignoreError ignores any exception while querying and exporting any of the tables.
+   * @throws SQLException
+   */
+  // comma separated table names
+  public static void EXPORT_DATA(String exportUri, String formatType, String tableNames,
+      Boolean ignoreError) throws SQLException {
+    try {
+      if (GemFireXDUtils.TraceSysProcedures) {
+        SanityManager.DEBUG_PRINT(GfxdConstants.TRACE_SYS_PROCEDURES,
+            "Executing EXPORT_DATA");
+      }
+      Long connectionId = Misc.getLanguageConnectionContext().getConnectionId();
+      GfxdListResultCollector collector = new GfxdListResultCollector();
+      GetLeadNodeInfoMsg msg = new GetLeadNodeInfoMsg(
+          collector, GetLeadNodeInfoMsg.DataReqType.EXPORT_DATA, connectionId,
+          exportUri, formatType, tableNames, ignoreError);
+
+      msg.executeFunction();
+      if (GemFireXDUtils.TraceSysProcedures) {
+        SanityManager.DEBUG_PRINT(GfxdConstants.TRACE_SYS_PROCEDURES,
+            "EXPORT_DATA successful.");
+      }
+    } catch (StandardException se) {
+      throw PublicAPI.wrapStandardException(se);
+    }
+  }
+
+  /**
+   * Exports all DDLs to specified directory path
+   * @param exportUri complete file path
+   * @throws SQLException
+   */
+
+  public static void EXPORT_DDLS(String exportUri) throws SQLException  {
+    try {
+      if (GemFireXDUtils.TraceSysProcedures) {
+        SanityManager.DEBUG_PRINT(GfxdConstants.TRACE_SYS_PROCEDURES,
+            "Executing EXPORT_DDLS");
+      }
+      Long connectionId = Misc.getLanguageConnectionContext().getConnectionId();
+      GfxdListResultCollector collector = new GfxdListResultCollector();
+      GetLeadNodeInfoMsg msg = new GetLeadNodeInfoMsg(
+          collector, GetLeadNodeInfoMsg.DataReqType.EXPORT_DDLS, connectionId, exportUri);
+      msg.executeFunction();
+      if (GemFireXDUtils.TraceSysProcedures) {
+        SanityManager.DEBUG_PRINT(GfxdConstants.TRACE_SYS_PROCEDURES,
+            "EXPORT_DDLS successful.");
+      }
     } catch (StandardException se) {
       throw PublicAPI.wrapStandardException(se);
     }

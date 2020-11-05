@@ -536,6 +536,11 @@ public class GemFireCacheImpl implements InternalCache, ClientCache, HasCachePer
   /** indicates whether this is a GemFireXD system */
   private static boolean gfxdSystem;
 
+  /** indicates whether the snappy system has been booted in recovery mode */
+  private static boolean snappyRecoverMode;
+
+  private static int recoveryStateChunkSize;
+
   private final CacheConfig cacheConfig;
   
   // Stores the properties used to initialize declarables.
@@ -6105,6 +6110,21 @@ public class GemFireCacheImpl implements InternalCache, ClientCache, HasCachePer
         members.remove(m);
       }
     }
+  }
+
+  public void setRecoverMode(boolean flag) {
+    snappyRecoverMode = flag;
+  }
+
+  public final boolean isSnappyRecoveryMode() {
+    return snappyRecoverMode;
+  }
+
+  public void setRecoveryStateChunkSize(int size) {
+    recoveryStateChunkSize = size;
+  }
+  public int getRecoveryStateChunkSize() {
+    return recoveryStateChunkSize;
   }
 
   public final boolean isGFXDSystem() {

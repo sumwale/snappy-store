@@ -5108,25 +5108,32 @@ characterStringType() throws StandardException :
 	int					length = DEFAULT_STRING_COLUMN_LENGTH;
 	Token				varyingToken = null;
 	int type;
+	boolean explicitLength = false;
 }
 {
   (
 	(
-		<VARCHAR> length = charLength()
+		<VARCHAR> [length = charLength() { explicitLength = true;}]
 	)
 	{
 		type = Types.VARCHAR;
+		if (!explicitLength) {
+		  length = Limits.DB2_VARCHAR_MAXWIDTH;
+		}
 	}
 |
 	charOrCharacter()
 	(
 		// Length is optional for CHARACTER, not for plain CHARACTER VARYING
-		varyingToken = <VARYING> length = charLength() |
-		[ length = charLength() ]
+		varyingToken = <VARYING> [ length = charLength() {explicitLength = true;}]
+		| [ length = charLength() ]
 	)
 	{
 		// If the user says CHARACTER VARYING, it's really VARCHAR
 		type = (varyingToken == null ? Types.CHAR : Types.VARCHAR);
+		if (!explicitLength && type == Types.VARCHAR) {
+		  length = Limits.DB2_VARCHAR_MAXWIDTH;
+		}
 	}
   ) [ type = forBitData(type) ]
 
@@ -5437,8 +5444,11 @@ approximateNumericType() throws StandardException :
 		/*
 			When not specified, default is DOUBLE_PRECISION
 		 */
-		if (prec == -1)
-			prec = TypeId.DOUBLE_PRECISION;
+		if (prec == -1) {
+			//prec = TypeId.DOUBLE_PRECISION;
+			// To Fix bug SNAP-3193
+			prec = Misc.getMemStore().isSnappyStore()? TypeId.REAL_PRECISION : TypeId.DOUBLE_PRECISION;
+		}
 
 		if (prec > 0 && prec <= TypeId.REAL_PRECISION)
 		{

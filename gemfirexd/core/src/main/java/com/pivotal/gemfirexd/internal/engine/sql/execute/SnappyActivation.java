@@ -29,12 +29,15 @@ import com.pivotal.gemfirexd.internal.engine.distributed.GfxdQueryResultCollecto
 import com.pivotal.gemfirexd.internal.engine.distributed.GfxdQueryStreamingResultCollector;
 import com.pivotal.gemfirexd.internal.engine.distributed.GfxdResultCollector;
 import com.pivotal.gemfirexd.internal.engine.distributed.SnappyResultHolder;
+import com.pivotal.gemfirexd.internal.engine.distributed.execution.LeadNodeExecutionObject;
+import com.pivotal.gemfirexd.internal.engine.distributed.execution.SQLLeadNodeExecutionObject;
 import com.pivotal.gemfirexd.internal.engine.distributed.message.LeadNodeExecutorMsg;
 import com.pivotal.gemfirexd.internal.engine.distributed.metadata.DMLQueryInfo;
 import com.pivotal.gemfirexd.internal.engine.distributed.utils.GemFireXDUtils;
 import com.pivotal.gemfirexd.internal.engine.jdbc.GemFireXDRuntimeException;
 import com.pivotal.gemfirexd.internal.engine.store.GemFireContainer;
 import com.pivotal.gemfirexd.internal.iapi.error.StandardException;
+import com.pivotal.gemfirexd.internal.iapi.sql.Activation;
 import com.pivotal.gemfirexd.internal.iapi.sql.ParameterValueSet;
 import com.pivotal.gemfirexd.internal.iapi.sql.ResultDescription;
 import com.pivotal.gemfirexd.internal.iapi.sql.ResultSet;
@@ -154,7 +157,9 @@ public class SnappyActivation extends BaseActivation {
       }
       rs.open();
       this.resultSet = rs;
-      executeWithResultSet(rs);
+      SQLLeadNodeExecutionObject execObj = new SQLLeadNodeExecutionObject(sql, this.lcc
+        .getCurrentSchemaName(), pvs, this.isPrepStmt,false, isUpdateOrDeleteOrPut);
+      executeWithResultSet(rs, execObj);
       if (GemFireXDUtils.TraceQuery) {
         SanityManager.DEBUG_PRINT(GfxdConstants.TRACE_QUERYDISTRIB,
             "SnappyActivation.execute: Done");
@@ -194,18 +199,18 @@ public class SnappyActivation extends BaseActivation {
     return new SnappyPrepareResultSet(this);
   }
 
-  private void executeWithResultSet(SnappySelectResultSet rs)
+  private void executeWithResultSet(SnappySelectResultSet rs, LeadNodeExecutionObject execObj)
       throws StandardException {
     boolean enableStreaming = this.lcc.streamingEnabled();
     GfxdResultCollector<Object> rc = getResultCollector(enableStreaming, rs);
-    executeOnLeadNode(rs, rc, this.sql, enableStreaming, this.getConnectionID(), this.lcc
-        .getCurrentSchemaName(), this.pvs, this.isPrepStmt, this.isUpdateOrDeleteOrPut, this.lcc);
+    executeOnLeadNode(rs, rc, enableStreaming, this,
+      this.lcc, execObj);
   }
 
   private void prepareWithResultSet(SnappyPrepareResultSet rs)
       throws StandardException {
     GfxdResultCollector<Object> rc = getPrepareResultCollector(rs);
-    prepareOnLeadNode(rs, rc, this.sql, this.getConnectionID(), this.lcc
+    prepareOnLeadNode(rs, rc, this.sql, this.getConnectionID(), this.statementID, this.lcc
         .getCurrentSchemaName(), this.pvs, this.isUpdateOrDeleteOrPut, this.lcc);
   }
 
@@ -314,15 +319,16 @@ public class SnappyActivation extends BaseActivation {
     this.resultDescription = resultDescription;
   }
 
-  private static void executeOnLeadNode(SnappySelectResultSet rs, GfxdResultCollector<Object> rc,
-      String sql, boolean enableStreaming, long connId, String schema, ParameterValueSet pvs,
-      boolean isPreparedStatement, boolean isUpdateOrDeleteOrPut, LanguageConnectionContext lcc)
+  static void executeOnLeadNode(SnappySelectResultSet rs, GfxdResultCollector<Object> rc,
+      boolean enableStreaming, Activation activation, LanguageConnectionContext lcc,
+      LeadNodeExecutionObject execObj)
       throws StandardException {
     // TODO: KN probably username, statement id and connId to be sent in
     // execution and of course tx id when transaction will be supported.
-    LeadNodeExecutionContext ctx = new LeadNodeExecutionContext(connId);
-    LeadNodeExecutorMsg msg = new LeadNodeExecutorMsg(sql, schema, ctx, rc, pvs,
-        isPreparedStatement, false, isUpdateOrDeleteOrPut);
+    LeadNodeExecutionContext ctx = new LeadNodeExecutionContext(activation.getConnectionID(),
+        activation.getStatementID());
+
+    LeadNodeExecutorMsg msg = new LeadNodeExecutorMsg(ctx, rc, execObj);
     // release all locks before sending the message else it can lead to deadlocks
     if (lcc != null) {
       lcc.getTransactionExecute().releaseAllLocks(true, true);
@@ -336,20 +342,21 @@ public class SnappyActivation extends BaseActivation {
     try {
       msg.executeFunction(enableStreaming, false, rs, true);
     } catch (RuntimeException | SQLException ex) {
-      Exception e = LeadNodeExecutorMsg.handleLeadNodeException(ex, sql);
+      Exception e = LeadNodeExecutorMsg.handleLeadNodeException(ex, execObj.getExceptionString());
       throw Misc.processFunctionException(
           "SnappyActivation::executeOnLeadNode", e, null, null);
     }
   }
 
   private static void prepareOnLeadNode(SnappyPrepareResultSet rs, GfxdResultCollector<Object> rc,
-      String sql, long connId, String schema, ParameterValueSet pvs,
+      String sql, long connId, long statementID, String schema, ParameterValueSet pvs,
       boolean isUpdateOrDeleteOrPut, LanguageConnectionContext lcc) throws StandardException {
     // TODO: KN probably username, statement id and connId to be sent in
     // execution and of course tx id when transaction will be supported.
-    LeadNodeExecutionContext ctx = new LeadNodeExecutionContext(connId);
-    LeadNodeExecutorMsg msg = new LeadNodeExecutorMsg(sql, schema, ctx, rc, pvs,
-        true, true, isUpdateOrDeleteOrPut);
+    LeadNodeExecutionContext ctx = new LeadNodeExecutionContext(connId, statementID);
+    SQLLeadNodeExecutionObject execObj = new SQLLeadNodeExecutionObject(sql, schema, pvs, true,
+      true, isUpdateOrDeleteOrPut);
+    LeadNodeExecutorMsg msg = new LeadNodeExecutorMsg(ctx, rc, execObj);
     if (lcc != null) {
       lcc.getTransactionExecute().releaseAllLocks(true, true);
     }

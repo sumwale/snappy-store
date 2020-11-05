@@ -36,6 +36,8 @@
 package com.pivotal.gemfirexd.internal.engine.distributed.utils;
 
 import java.io.*;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.security.AlgorithmParameters;
 import java.security.PrivilegedActionException;
 import java.sql.Connection;
@@ -90,6 +92,7 @@ import com.gemstone.gemfire.internal.shared.HostLocationBase;
 import com.gemstone.gemfire.internal.shared.NativeCalls;
 import com.gemstone.gemfire.internal.shared.StringPrintWriter;
 import com.gemstone.gemfire.internal.shared.Version;
+import com.gemstone.gemfire.internal.shared.unsafe.UnsafeHolder;
 import com.gemstone.gemfire.internal.util.ArraySortedCollectionWithOverflow;
 import com.gemstone.gemfire.internal.util.ArrayUtils;
 import com.gemstone.gemfire.management.internal.JmxManagerAdvisor.JmxManagerProfile;
@@ -1194,6 +1197,44 @@ public final class GemFireXDUtils {
       }
     }
     return intersect;
+  }
+
+  public static boolean equalBuffers(final byte[] bytes,
+      final ByteBuffer buffer) {
+    final int len = bytes.length;
+    if (len != buffer.remaining()) {
+      return false;
+    }
+    // read in longs to minimize ByteBuffer get() calls
+    int pos = buffer.position();
+    final int endPos = (pos + len);
+    final boolean sameOrder = ByteOrder.nativeOrder() == buffer.order();
+    // round off to nearest factor of 8 to read in longs
+    final int endRound8Pos = (len % 8) != 0 ? (endPos - 8) : endPos;
+    long indexPos = UnsafeHolder.BYTE_ARRAY_OFFSET;
+    while (pos < endRound8Pos) {
+      // splitting into longs is faster than reading one byte at a time even
+      // though it costs more operations (about 20% in micro-benchmarks)
+      final long s = UnsafeHolder.getUnsafe().getLong(bytes, indexPos);
+      final long v = buffer.getLong(pos);
+      if (sameOrder) {
+        if (s != v) {
+          return false;
+        }
+      } else if (s != Long.reverseBytes(v)) {
+        return false;
+      }
+      pos += 8;
+      indexPos += 8;
+    }
+    while (pos < endPos) {
+      if (UnsafeHolder.getUnsafe().getByte(bytes, indexPos) != buffer.get(pos)) {
+        return false;
+      }
+      pos++;
+      indexPos++;
+    }
+    return true;
   }
 
   /**
@@ -3268,6 +3309,8 @@ public final class GemFireXDUtils {
 
   public static boolean TraceStatementMatching;
 
+  public static boolean TraceRecoveryMode;
+
   public static boolean TraceConnectionSignaller;
 
   public static boolean TraceTrigger;
@@ -3358,6 +3401,7 @@ public final class GemFireXDUtils {
     TraceProcedureExecution = (TraceQuery || DistributionManager.VERBOSE
         || SanityManager.TRACE_ON(GfxdConstants.TRACE_PROCEDURE_EXEC))
         && !SanityManager.TRACE_OFF(GfxdConstants.TRACE_PROCEDURE_EXEC);
+    TraceRecoveryMode = SanityManager.TRACE_ON(GfxdConstants.TRACE_RECOVERY_MODE);
 
     TraceStatementMatching = SanityManager
         .TRACE_ON(GfxdConstants.TRACE_STATEMENT_MATCHING);

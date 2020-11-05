@@ -98,7 +98,7 @@ import com.pivotal.gemfirexd.internal.shared.common.sanity.SanityManager;
  * @author Rahul Dubey
  * @author swale
  */
-@SuppressWarnings("serial")
+@SuppressWarnings({ "serial", "WeakerAccess" })
 public final class RowFormatter implements Serializable {
 
   /*
@@ -106,7 +106,7 @@ public final class RowFormatter implements Serializable {
    * normally not used because the offset then is negative of next variable
    * column offset, but when serializing columns back to back with embedded
    * widths (rather than offsets) this is used to denote a null column.
-   * 
+   *
    * public static final int OFFSET_IS_NULL = -1;
    */
 
@@ -5523,13 +5523,13 @@ public final class RowFormatter implements Serializable {
     } else {
       dvd = cd.columnType.getNull();
     }
-    if (SanityManager.DEBUG) {
-      if (GemFireXDUtils.TraceRowFormatter) {
+     if (SanityManager.DEBUG) {
+       if (GemFireXDUtils.TraceRowFormatter) {
         SanityManager.DEBUG_PRINT(GfxdConstants.TRACE_ROW_FORMATTER,
             "RowFormatter#getColumn(byte[][]): for column at position "
                 + logicalPosition + " returning DVD {" + dvd + ", type: "
                 + cd.columnType + '}');
-      }
+       }
     }
     return dvd;
   }

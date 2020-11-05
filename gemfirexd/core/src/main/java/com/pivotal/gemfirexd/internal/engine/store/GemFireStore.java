@@ -117,6 +117,7 @@ import com.pivotal.gemfirexd.internal.engine.distributed.DistributedConnectionCl
 import com.pivotal.gemfirexd.internal.engine.distributed.GfxdConnectionHolder;
 import com.pivotal.gemfirexd.internal.engine.distributed.GfxdDistributionAdvisor;
 import com.pivotal.gemfirexd.internal.engine.distributed.QueryCancelFunction;
+import com.pivotal.gemfirexd.internal.engine.distributed.message.PersistentStateInRecoveryMode;
 import com.pivotal.gemfirexd.internal.engine.distributed.utils.GemFireXDUtils;
 import com.pivotal.gemfirexd.internal.engine.fabricservice.FabricServiceImpl;
 import com.pivotal.gemfirexd.internal.engine.fabricservice.FabricServiceImpl.NetworkInterfaceImpl;
@@ -392,7 +393,7 @@ public final class GemFireStore implements AccessFactory, ModuleControl,
   public static final ThreadLocal<Boolean> externalCatalogInitThread =
       new ThreadLocal<>();
 
-  private Region<String, String> snappyGlobalCmdRgn;
+  private Region<String, Object> snappyMetadataCmdRgn;
 
   /**
    *************************************************************************
@@ -1114,6 +1115,21 @@ public final class GemFireStore implements AccessFactory, ModuleControl,
         this.gemFireCache = (GemFireCacheImpl)c.create();
         this.gemFireCache.getLogger().info(
             "GemFire Cache successfully created.");
+        if (props.containsKey(GfxdConstants.SNAPPY_PREFIX + CacheServerLauncher.RECOVER)) {
+          String recoveryMode = props.getProperty(GfxdConstants.SNAPPY_PREFIX + CacheServerLauncher.RECOVER);
+          if (recoveryMode != null && recoveryMode.equals("true")) {
+            this.gemFireCache.getLogger().info(
+                "GemFire Cache has come up in recovery mode.");
+            this.gemFireCache.setRecoverMode(true);
+
+            if (props.containsKey(GfxdConstants.SNAPPY_PREFIX +
+                CacheServerLauncher.RECOVERY_STATE_CHUNK_SIZE)) {
+              this.gemFireCache.setRecoveryStateChunkSize(Integer.parseInt(props.
+                  getProperty(GfxdConstants.SNAPPY_PREFIX +
+                      CacheServerLauncher.RECOVERY_STATE_CHUNK_SIZE)));
+            }
+          }
+        }
       } catch (CacheExistsException ex) {
         this.gemFireCache = GemFireCacheImpl.getExisting();
         this.gemFireCache.getLogger().info("Found existing GemFire Cache.");
@@ -2167,6 +2183,7 @@ public final class GemFireStore implements AccessFactory, ModuleControl,
           }
         }
       }
+      cache.setRecoverMode(false);
       this.gemFireCache = null;
       this.gfxdDefaultDiskStore = null;
       this.identityRegion = null;   
@@ -3072,12 +3089,12 @@ public final class GemFireStore implements AccessFactory, ModuleControl,
     }
   }
 
-  public void setGlobalCmdRgn(Region gcr) {
-    this.snappyGlobalCmdRgn = gcr;
+  public void setMetadataCmdRgn(Region gcr) {
+    this.snappyMetadataCmdRgn = gcr;
   }
 
-  public Region<String, String> getGlobalCmdRgn() {
-    return this.snappyGlobalCmdRgn;
+  public Region<String, Object> getMetadataCmdRgn() {
+    return this.snappyMetadataCmdRgn;
   }
 
   private boolean restrictTableCreation = Boolean.getBoolean(
@@ -3097,5 +3114,19 @@ public final class GemFireStore implements AccessFactory, ModuleControl,
   /** returns true if row-level security is enabled on the system */
   public boolean isRLSEnabled() {
     return rlsEnabled;
+  }
+
+  private volatile PersistentStateInRecoveryMode persistentStateMsg = null;
+
+  public void setPersistentStateMsg(PersistentStateInRecoveryMode msg) {
+    if (GemFireXDUtils.TraceDDLReplay) {
+      SanityManager.DEBUG_PRINT(GfxdConstants.TRACE_DDLREPLAY,
+          "persistent state message is: " + msg);
+    }
+    this.persistentStateMsg = msg;
+  }
+
+  public PersistentStateInRecoveryMode getPersistentStateMsg() {
+    return this.persistentStateMsg;
   }
 }

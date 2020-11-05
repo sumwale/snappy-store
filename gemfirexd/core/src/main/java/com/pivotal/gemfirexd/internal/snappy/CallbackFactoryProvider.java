@@ -19,6 +19,7 @@ package com.pivotal.gemfirexd.internal.snappy;
 
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 
 import com.gemstone.gemfire.distributed.internal.membership.InternalDistributedMember;
 import com.gemstone.gemfire.internal.ByteArrayDataInput;
@@ -53,10 +54,32 @@ public abstract class CallbackFactoryProvider {
     }
 
     @Override
-    public SparkSQLExecute getSQLExecute(String sql, String schema,
+    public SparkSQLExecute getSQLExecute(Object dfObj, String sql, String schema,
         LeadNodeExecutionContext ctx, Version v, boolean isPreparedStatement,
         boolean isPreparedPhase, ParameterValueSet pvs) {
        return null;
+    }
+
+    @Override
+    public InterpreterExecute getInterpreterExecution(String sql, Version v, Long connId) {
+        return null;
+    }
+
+    @Override
+    public boolean isUserAuthorizedForExternalTable(String user, String table) {
+      return false;
+    }
+
+    public SparkSQLExecute getSampleInsertExecute(String baseTable,  LeadNodeExecutionContext ctx,
+        Version v, List<DataValueDescriptor[]> dvdRows, byte[] serializedDVDs) {
+      return null;
+    }
+
+    public void exportData(Long connId, String exportUri, String formatType, String tableNames, Boolean ignoreError){
+    }
+
+    @Override
+    public void exportDDLs(Long connId, String exportUri) {
     }
 
     @Override
@@ -87,6 +110,10 @@ public abstract class CallbackFactoryProvider {
 
     @Override
     public void setLeadClassLoader() {
+    }
+
+    @Override
+    public void cancelJobGroup(String groupId){
     }
   };
 

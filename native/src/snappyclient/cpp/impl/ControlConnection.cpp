@@ -61,14 +61,14 @@ using namespace io::snappydata::thrift;
 std::vector<std::unique_ptr<ControlConnection> > ControlConnection::s_allConnections;
 boost::mutex ControlConnection::s_allConnsLock;
 
-ControlConnection::ControlConnection(ClientService * const &service) :
+ControlConnection::ControlConnection(ClientService* service) :
     m_serverGroups(service->getServerGrps()) {
   m_locators = service->getLocators();
   m_framedTransport = service->isFrameTransport();
-  m_snappyServerType = service->getServerType(true, false, false);
+  m_snappyServerType = service->getServerType();
   m_controlHost = service->getCurrentHostAddress();
   boost::assign::insert(m_snappyServerTypeSet)(
-      service->getServerType(true, false, false));
+      service->getServerType());
   std::copy(m_locators.begin(), m_locators.end(),
       std::inserter(m_controlHostSet, m_controlHostSet.end()));
   m_controlLocator = nullptr;
@@ -76,7 +76,7 @@ ControlConnection::ControlConnection(ClientService * const &service) :
 
 const boost::optional<ControlConnection&> ControlConnection::getOrCreateControlConnection(
     const std::vector<thrift::HostAddress>& hostAddrs,
-    ClientService * const &service, const std::exception& failure) {
+    ClientService* service, const std::exception& failure) {
 
   // loop through all ControlConnections since size of this global list is
   // expected to be in single digit (total number of distributed systems)
@@ -97,7 +97,7 @@ const boost::optional<ControlConnection&> ControlConnection::getOrCreateControlC
       if (result == _locators.end()) {
         continue;
       } else {
-        auto serviceServerType = service->getServerType(true, false, false); // TODO: need to discuss with sumedh about this getServerType method
+        auto serviceServerType = service->getServerType();
         auto contrConnServerType = controlConn->m_snappyServerType;
         if (contrConnServerType == serviceServerType) {
           return *controlConn;
@@ -123,12 +123,12 @@ const boost::optional<ControlConnection&> ControlConnection::getOrCreateControlC
     }
   }
 
-  if (allConnSize == 0) { // first attempt of creating connection
+  {  // first attempt of creating connection
     // if we reached here, then need to create a new ControlConnection
-    std::unique_ptr<ControlConnection> controlService(
+    std::unique_ptr<ControlConnection> controlConn(
         new ControlConnection(service));
     thrift::HostAddress preferredServer;
-    controlService->getPreferredServer(preferredServer, failure, true);
+    controlConn->getPreferredServer(preferredServer, failure, service ,true);
     // check again if new control host already exist
     index = static_cast<signed short>(s_allConnections.size());
     while (--index >= 0) {
@@ -142,17 +142,9 @@ const boost::optional<ControlConnection&> ControlConnection::getOrCreateControlC
         return *controlConn;
       }
     }
-    s_allConnections.push_back(std::move(controlService));
-    return *s_allConnections.back();
-  } else {
-    thrift::SnappyException ex;
-    SnappyExceptionData snappyExData;
-    snappyExData.__set_sqlState(
-        std::string(SQLState::UNKNOWN_EXCEPTION.getSQLState()));
-    snappyExData.__set_reason("Failed to connect");
-    ex.__set_exceptionData(snappyExData);
-    throw ex;
+    s_allConnections.push_back(std::move(controlConn));
   }
+  return *s_allConnections.back();
 }
 
 void ControlConnection::getLocatorPreferredServer(
@@ -165,19 +157,20 @@ void ControlConnection::getLocatorPreferredServer(
 
 void ControlConnection::getPreferredServer(
     thrift::HostAddress& preferredServer, const std::exception& failure,
-    bool forFailover) {
+    ClientService* service, bool forFailover) {
   std::set<thrift::HostAddress> failedServers;
   std::set<std::string> serverGroups;
   return getPreferredServer(preferredServer, failure, failedServers,
-      serverGroups, forFailover);
+      serverGroups, service, forFailover);
 }
 
 void ControlConnection::getPreferredServer(
     thrift::HostAddress& preferredServer, const std::exception& failure,
     std::set<thrift::HostAddress>& failedServers,
-    std::set<std::string>& serverGroups, bool forFailover) {
+    std::set<std::string>& serverGroups, ClientService* service,
+    bool forFailover) {
   if (m_controlLocator == nullptr) {
-    failoverToAvailableHost(failedServers, false, failure);
+    failoverToAvailableHost(failedServers, false, failure, service);
     forFailover = true;
   }
   boost::lock_guard<boost::mutex> localGuard(m_lock);
@@ -237,7 +230,7 @@ void ControlConnection::getPreferredServer(
         failedServers.insert(m_controlHost);
       }
       m_controlLocator->getOutputProtocol()->getTransport()->close();
-      failoverToAvailableHost(failedServers, true, tex);
+      failoverToAvailableHost(failedServers, true, tex, service);
     } catch (std::exception &ex) {
       throw unexpectedError(ex, m_controlHost);
     }
@@ -273,7 +266,8 @@ void ControlConnection::searchRandomServer(
 
 void ControlConnection::failoverToAvailableHost(
     std::set<thrift::HostAddress>& failedServers,
-    bool checkFailedControlHosts, const std::exception& failure) {
+    bool checkFailedControlHosts, const std::exception& failure,
+    ClientService* service) {
   boost::lock_guard<boost::mutex> localGuard(m_lock);
   for (auto iterator = m_controlHostSet.begin();
       iterator != m_controlHostSet.end(); ++iterator) {
@@ -300,9 +294,7 @@ void ControlConnection::failoverToAvailableHost(
             || m_snappyServerType == thrift::ServerType::THRIFT_SNAPPY_BP_SSL
             || m_snappyServerType
                 == thrift::ServerType::THRIFT_SNAPPY_CP_SSL) {
-          TSSLSocketFactory sslSocketFactory;
-          tTransport = sslSocketFactory.createSocket(controlAddr.hostName,
-              controlAddr.port);
+          tTransport = service->createSSLSocket(controlAddr.hostName, controlAddr.port);
         } else if (m_snappyServerType == thrift::ServerType::THRIFT_LOCATOR_BP
             || m_snappyServerType == thrift::ServerType::THRIFT_LOCATOR_CP
             || m_snappyServerType == thrift::ServerType::THRIFT_SNAPPY_BP
@@ -360,10 +352,7 @@ void ControlConnection::failoverToAvailableHost(
 const thrift::SnappyException ControlConnection::unexpectedError(
     const std::exception& ex, const thrift::HostAddress& host) {
 
-  if (m_controlLocator != nullptr) {
-    m_controlLocator->getOutputProtocol()->getTransport()->close();
-    m_controlLocator.reset(nullptr);
-  }
+  close(false);
   thrift::SnappyException snappyEx;
   SnappyExceptionData snappyExData;
   snappyExData.__set_sqlState(
@@ -460,7 +449,6 @@ void ControlConnection::getConnectedHost(thrift::HostAddress& hostAddr,
       connectedHost = host;
     }
   }
-
 }
 
 void ControlConnection::close(bool clearGlobal) {

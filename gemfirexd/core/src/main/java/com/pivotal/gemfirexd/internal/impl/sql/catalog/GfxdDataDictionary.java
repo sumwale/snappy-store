@@ -1515,7 +1515,9 @@ public final class GfxdDataDictionary extends DataDictionaryImpl {
       String[] argNames = new String[] { "EXPORT_ALL" };
       TypeDescriptor[] argTypes = new TypeDescriptor[] {
           DataTypeDescriptor.getCatalogType(Types.BOOLEAN) };
-      super.createSystemProcedureOrFunction("EXPORT_DDLS", sysUUID, argNames,
+      // changed the procedure name from EXPORT_DDLS to EXPORT_ALL_DDLS to use
+      // the former for user facing procedure
+      super.createSystemProcedureOrFunction("EXPORT_ALL_DDLS", sysUUID, argNames,
           argTypes, 0, 1, RoutineAliasInfo.NO_SQL, null, newlyCreatedRoutines,
           tc, GFXD_SYS_PROC_CLASSNAME, true);
     }
@@ -1787,7 +1789,7 @@ public final class GfxdDataDictionary extends DataDictionaryImpl {
           DataTypeDescriptor.getCatalogType(Types.BLOB),
           DataTypeDescriptor.getCatalogType(Types.BLOB) };
       super.createSystemProcedureOrFunction("GET_CATALOG_METADATA",
-          sysUUID, arg_names, arg_types, 1, 0, RoutineAliasInfo.READS_SQL_DATA, null,
+          sysUUID, arg_names, arg_types, 1, 0, RoutineAliasInfo.NO_SQL, null,
           newlyCreatedRoutines, tc, GFXD_SYS_PROC_CLASSNAME, false);
     }
 
@@ -1810,6 +1812,41 @@ public final class GfxdDataDictionary extends DataDictionaryImpl {
       super.createSystemProcedureOrFunction("GET_DEPLOYED_JARS",
           sysUUID, arg_names, arg_types, 1, 0, RoutineAliasInfo.READS_SQL_DATA, null,
           newlyCreatedRoutines, tc, GFXD_SYS_PROC_CLASSNAME, false);
+    }
+
+    {
+      // GET_JARS -- Smart Connectors will pull all the jars
+      String[] arg_names = new String[] { "USER", "ALLTABLES", "AUTHZRESULT"};
+      TypeDescriptor[] arg_types = new TypeDescriptor[] {
+              DataTypeDescriptor.getCatalogType(Types.VARCHAR),
+              DataTypeDescriptor.getCatalogType(Types.VARCHAR),
+              DataTypeDescriptor.getCatalogType(Types.VARCHAR)
+      };
+      super.createSystemProcedureOrFunction("CHECK_AUTHZ_ON_EXT_TABLES",
+              sysUUID, arg_names, arg_types, 1, 0, RoutineAliasInfo.READS_SQL_DATA, null,
+              newlyCreatedRoutines, tc, GFXD_SYS_PROC_CLASSNAME, false);
+    }
+
+    {
+      String[] arg_names = new String[] {"PATH_URI", "FORMAT_TYPE", "TABLES", "IGNORE_ERROR"};
+      TypeDescriptor[] arg_types = new TypeDescriptor[] {
+          DataTypeDescriptor.getCatalogType(Types.VARCHAR),
+          DataTypeDescriptor.getCatalogType(Types.VARCHAR),
+          DataTypeDescriptor.getCatalogType(Types.VARCHAR),
+          DataTypeDescriptor.getCatalogType(Types.BOOLEAN)};
+      super.createSystemProcedureOrFunction("EXPORT_DATA",
+          sysUUID, arg_names, arg_types, 0, 0, RoutineAliasInfo.READS_SQL_DATA, null,
+          newlyCreatedRoutines, tc, GFXD_SYS_PROC_CLASSNAME, false);
+    }
+
+    {
+      String[] arg_name = new String[] { "EXPORT_URI" };
+      TypeDescriptor[] arg_types = new TypeDescriptor[] {
+          DataTypeDescriptor.getCatalogType(Types.VARCHAR),
+      };
+      super.createSystemProcedureOrFunction("EXPORT_DDLS", sysUUID, arg_name, arg_types, 0,
+          0, RoutineAliasInfo.READS_SQL_DATA, null, newlyCreatedRoutines,
+          tc, GFXD_SYS_PROC_CLASSNAME, false);
     }
 
     {

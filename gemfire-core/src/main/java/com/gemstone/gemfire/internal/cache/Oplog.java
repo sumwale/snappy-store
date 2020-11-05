@@ -7084,7 +7084,8 @@ public final class Oplog implements CompactableOplog {
     return this.totalLiveCount.get() <= 0
       // if we have an unrecoveredRegion then we don't know how many liveValues we have
       && this.unrecoveredRegionCount.get() == 0
-      && !getParent().isOfflineCompacting();
+      && !getParent().isOfflineCompacting()
+      && !getParent().isDataRecoveryMode();
   }
 
   private void handleEmptyAndOldest(boolean calledByCompactor) {

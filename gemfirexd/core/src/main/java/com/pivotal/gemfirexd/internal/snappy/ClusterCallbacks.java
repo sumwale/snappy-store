@@ -19,6 +19,7 @@ package com.pivotal.gemfirexd.internal.snappy;
 
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 
 import com.gemstone.gemfire.distributed.internal.membership.InternalDistributedMember;
 import com.gemstone.gemfire.internal.ByteArrayDataInput;
@@ -40,8 +41,20 @@ public interface ClusterCallbacks {
 
   void stopExecutor();
 
-  SparkSQLExecute getSQLExecute(String sql, String schema, LeadNodeExecutionContext ctx,
+  SparkSQLExecute getSQLExecute(Object dfObject, String sql, String schema, LeadNodeExecutionContext ctx,
       Version v, boolean isPreparedStatement, boolean isPreparedPhase, ParameterValueSet pvs);
+
+  InterpreterExecute getInterpreterExecution(String sql, Version v, Long connId);
+
+  boolean isUserAuthorizedForExternalTable(String user, String table);
+
+  SparkSQLExecute getSampleInsertExecute(String baseTable,  LeadNodeExecutionContext ctx,
+      Version v, List<DataValueDescriptor[]> dvdRows, byte[] serializedDVDs);
+
+  void exportData(Long connId, String exportUri, String formatType, String tableNames,
+      Boolean ignoreError);
+
+  void exportDDLs(Long connId, String exportUri);
 
   Object readDataType(ByteArrayDataInput in);
 
@@ -58,4 +71,6 @@ public interface ClusterCallbacks {
   String getClusterType();
 
   void setLeadClassLoader();
+
+  void cancelJobGroup(String groupId);
 }
