@@ -21,9 +21,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.sql.SQLException;
-import java.util.Arrays;
 import java.util.Set;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.gemstone.gemfire.DataSerializer;
@@ -33,12 +31,8 @@ import com.gemstone.gemfire.cache.execute.FunctionException;
 import com.gemstone.gemfire.distributed.DistributedMember;
 import com.gemstone.gemfire.distributed.internal.ReplyException;
 import com.gemstone.gemfire.distributed.internal.membership.InternalDistributedMember;
-import com.gemstone.gemfire.internal.ByteArrayDataInput;
-import com.gemstone.gemfire.internal.HeapDataOutputStream;
-import com.gemstone.gemfire.internal.InternalDataSerializer;
 import com.gemstone.gemfire.internal.shared.Version;
 import com.pivotal.gemfirexd.internal.engine.Misc;
-import com.pivotal.gemfirexd.internal.engine.distributed.DVDIOUtil;
 import com.pivotal.gemfirexd.internal.engine.distributed.FunctionExecutionException;
 import com.pivotal.gemfirexd.internal.engine.distributed.GfxdResultCollector;
 import com.pivotal.gemfirexd.internal.engine.distributed.SnappyResultHolder;
@@ -46,11 +40,6 @@ import com.pivotal.gemfirexd.internal.engine.distributed.execution.LeadNodeExecu
 import com.pivotal.gemfirexd.internal.engine.distributed.utils.GemFireXDUtils;
 import com.pivotal.gemfirexd.internal.engine.jdbc.GemFireXDRuntimeException;
 import com.pivotal.gemfirexd.internal.iapi.error.StandardException;
-import com.pivotal.gemfirexd.internal.iapi.sql.ParameterValueSet;
-import com.pivotal.gemfirexd.internal.iapi.types.DataTypeDescriptor;
-import com.pivotal.gemfirexd.internal.iapi.types.DataValueDescriptor;
-import com.pivotal.gemfirexd.internal.iapi.types.SQLDecimal;
-import com.pivotal.gemfirexd.internal.impl.sql.GenericParameterValueSet;
 import com.pivotal.gemfirexd.internal.shared.common.reference.SQLState;
 import com.pivotal.gemfirexd.internal.snappy.CallbackFactoryProvider;
 import com.pivotal.gemfirexd.internal.snappy.InterpreterExecute;
@@ -150,7 +139,7 @@ public final class LeadNodeExecutorMsg extends MemberExecutorMessage<Object> {
     String sql = this.execObject.getSql();
     if (sql != null) {
       if (EXEC_COMMAND.matcher(sql).matches()) {
-        String user = ctx.getUserName() != null ? ctx.getUserName().toLowerCase() : ctx.getUserName();
+        String user = ctx.getUserName() != null ? ctx.getUserName().toLowerCase() : null;
         InternalDistributedMember member = this.getSenderForReply();
         final Version v = member.getVersionObject();
         InterpreterExecute intpexec =

@@ -418,9 +418,7 @@ public abstract class UnsafeHolder {
     } else if (!getUnsafe().tryMonitorEnter(obj)) {
       // try once more after a small wait
       LockSupport.parkNanos(100L);
-      if (!getUnsafe().tryMonitorEnter(obj)) {
-        return false;
-      }
+      return getUnsafe().tryMonitorEnter(obj);
     }
     return true;
   }

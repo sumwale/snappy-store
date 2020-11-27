@@ -5193,10 +5193,9 @@ public final class GemFireContainer extends AbstractGfxdLockable implements
         && !isObjectStore();
   }
 
-
   public boolean hasDependentSampleTables() {
     ExternalTableMetaData etmd = this.fetchHiveMetaData(false);
-    return etmd != null ? etmd.hasDependentSampleTables : false;
+    return etmd != null && etmd.hasDependentSampleTables;
   }
 
   /**

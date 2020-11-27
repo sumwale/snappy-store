@@ -18,6 +18,11 @@
  */
 package com.pivotal.gemfirexd.internal.engine.distributed.message;
 
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
+import java.util.*;
+
 import com.gemstone.gemfire.DataSerializable;
 import com.gemstone.gemfire.DataSerializer;
 import com.gemstone.gemfire.distributed.internal.membership.InternalDistributedMember;
@@ -34,21 +39,16 @@ import com.pivotal.gemfirexd.internal.engine.ddl.DDLConflatable;
 import com.pivotal.gemfirexd.internal.engine.distributed.utils.GemFireXDUtils;
 import com.pivotal.gemfirexd.internal.iapi.services.sanity.SanityManager;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
-import java.util.*;
-
 public class PersistentStateInRecoveryMode {
 
-  private InternalDistributedMember member = null;
+  private final InternalDistributedMember member;
   private final ArrayList<RecoveryModePersistentView>
       allRegionView = new ArrayList<>();
   private final ArrayList<Object> catalogObjects = new ArrayList<>();
-  private ArrayList<String> otherExtractedDDLText = new ArrayList<>();
+  private final ArrayList<String> otherExtractedDDLText = new ArrayList<>();
   private final HashMap<String, Integer> prToNumBuckets = new HashMap<>();
-  private HashSet<String> replicatedRegions = new HashSet<>();
-  private boolean isServer;
+  private final HashSet<String> replicatedRegions = new HashSet<>();
+  private final boolean isServer;
 
   public PersistentStateInRecoveryMode(
       List<Object> allEntries,
@@ -74,12 +74,13 @@ public class PersistentStateInRecoveryMode {
     this.catalogObjects.addAll(catalogObjects);
     this.otherExtractedDDLText.addAll(otherExtractedDDLText);
     this.prToNumBuckets.putAll(prToNumBuckets);
-    this.replicatedRegions = replicatedRegions;
+    this.replicatedRegions.addAll(replicatedRegions);
     this.isServer = isServer;
   }
 
   public PersistentStateInRecoveryMode() {
-
+    this.member = null;
+    this.isServer = false;
   }
 
   public void addView(RecoveryModePersistentView v) {
@@ -155,7 +156,7 @@ public class PersistentStateInRecoveryMode {
     }
     sb.append("prToNumBuckets:");
     for (Map.Entry<String, Integer> e : prToNumBuckets.entrySet()) {
-      sb.append("\nbucket: " + e.getKey() + " ::: numBuckets: " + e.getValue());
+      sb.append("\nbucket: ").append(e.getKey()).append(" ::: numBuckets: ").append(e.getValue());
     }
     sb.append("\n");
     sb.append("replicatedRegions\n");
@@ -286,7 +287,7 @@ public class PersistentStateInRecoveryMode {
     }
 
     void log(String str) {
-      if(GemFireXDUtils.TraceRecoveryMode) {
+      if (GemFireXDUtils.TraceRecoveryMode) {
         SanityManager.DEBUG_PRINT(GfxdConstants.TRACE_RECOVERY_MODE, str);
       }
     }
@@ -405,8 +406,8 @@ public class PersistentStateInRecoveryMode {
     }
 
     void log(String str) {
-      if(GemFireXDUtils.TraceRecoveryMode) {
-      SanityManager.DEBUG_PRINT(GfxdConstants.TRACE_RECOVERY_MODE, str);
+      if (GemFireXDUtils.TraceRecoveryMode) {
+        SanityManager.DEBUG_PRINT(GfxdConstants.TRACE_RECOVERY_MODE, str);
       }
     }
 

@@ -3,7 +3,6 @@ package com.pivotal.gemfirexd.internal.engine.distributed.execution;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 
 import com.gemstone.gemfire.DataSerializer;
@@ -35,7 +34,7 @@ public class SampleInsertExecutionObject extends LeadNodeExecutionObject {
   public SampleInsertExecutionObject() {}
 
   public SparkSQLExecute getSparkSQlExecute(Version v,
-      LeadNodeExecutionContext ctx, Object dfOject) throws Exception {
+      LeadNodeExecutionContext ctx, Object dfOject) {
     return CallbackFactoryProvider.getClusterCallbacks().getSampleInsertExecute( this.baseTableName,
       ctx, v, this.rows, this.serializedDVDs);
   }

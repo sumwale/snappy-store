@@ -1117,7 +1117,7 @@ public final class GemFireStore implements AccessFactory, ModuleControl,
             "GemFire Cache successfully created.");
         if (props.containsKey(GfxdConstants.SNAPPY_PREFIX + CacheServerLauncher.RECOVER)) {
           String recoveryMode = props.getProperty(GfxdConstants.SNAPPY_PREFIX + CacheServerLauncher.RECOVER);
-          if (recoveryMode != null && recoveryMode.equals("true")) {
+          if (recoveryMode != null && recoveryMode.equalsIgnoreCase("true")) {
             this.gemFireCache.getLogger().info(
                 "GemFire Cache has come up in recovery mode.");
             this.gemFireCache.setRecoverMode(true);
@@ -3097,11 +3097,10 @@ public final class GemFireStore implements AccessFactory, ModuleControl,
     return this.snappyMetadataCmdRgn;
   }
 
-  private boolean restrictTableCreation = Boolean.getBoolean(
+  private final boolean restrictTableCreation = Boolean.getBoolean(
       Property.SNAPPY_RESTRICT_TABLE_CREATE);
 
-  private boolean rlsEnabled = Boolean.getBoolean(
-      Property.SNAPPY_ENABLE_RLS);
+  private final boolean rlsEnabled = Boolean.getBoolean(Property.SNAPPY_ENABLE_RLS);
 
   // TODO: this internal property is only for some unit tests and should be removed
   // by updating the tests to use LDAP server (see PolictyTestBase in SnappyData)

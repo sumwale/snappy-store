@@ -52,7 +52,7 @@ public interface ClusterCallbacks {
       Version v, List<DataValueDescriptor[]> dvdRows, byte[] serializedDVDs);
 
   void exportData(Long connId, String exportUri, String formatType, String tableNames,
-      Boolean ignoreError);
+      boolean ignoreError);
 
   void exportDDLs(Long connId, String exportUri);
 
