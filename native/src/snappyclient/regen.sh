@@ -9,7 +9,7 @@ if [ -z ${THRIFT_VERSION} ]; then
   THRIFT_VERSION=0.10.0
 fi
 if [ -z ${SOFTWARE_PREFIX} ]; then
-  SOFTWARE_PREFIX=/export/shared/software
+  SOFTWARE_PREFIX=/gcm/where/software
 fi
 PATH=$PATH:${SOFTWARE_PREFIX}/thrift-${THRIFT_VERSION}/lin64/bin
 LD_LIBRARY_PATH=$LD_LIBRARY_PATH:${SOFTWARE_PREFIX}/thrift-${THRIFT_VERSION}/lin64/lib

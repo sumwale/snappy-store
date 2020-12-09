@@ -98,8 +98,10 @@ import com.pivotal.gemfirexd.internal.shared.common.sanity.SanityManager;
  * @author Rahul Dubey
  * @author swale
  */
-@SuppressWarnings({ "serial", "WeakerAccess" })
+@SuppressWarnings("WeakerAccess")
 public final class RowFormatter implements Serializable {
+
+  private static final long serialVersionUID = 388760526667285565L;
 
   /*
    * /** Special token offset value to denote that column value is null. This is
@@ -210,10 +212,10 @@ public final class RowFormatter implements Serializable {
    * The {@link ColumnDescriptor}'s for this row that avoids having to go to
    * {@link ColumnDescriptorList} everytime.
    */
-  public transient ColumnDescriptor[] columns;
+  public ColumnDescriptor[] columns;
 
   /** number of LOB columns types in a row */
-  int numLobs;
+  private int numLobs;
 
   /** false if this is for an off-heap table else true */
   public final boolean isHeap;
@@ -1916,7 +1918,7 @@ public final class RowFormatter implements Serializable {
   /**
    * Read the schema version from the start of byte array.
    */
-  static int readVersion(final byte[] bytes) {
+  public static int readVersion(final byte[] bytes) {
     // version is written at the start of byte array
     final int schemaVersion = readCompactInt(bytes, 0);
     // special token TOKEN_RECOVERY_VERSION is used for upgrade from old Oplogs

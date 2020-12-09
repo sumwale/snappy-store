@@ -35,7 +35,7 @@ import com.gemstone.gemfire.internal.cache.persistence.PRPersistentConfig;
 import com.gemstone.gemfire.internal.cache.versions.RegionVersionVector;
 import com.pivotal.gemfirexd.internal.engine.GfxdConstants;
 import com.pivotal.gemfirexd.internal.engine.Misc;
-import com.pivotal.gemfirexd.internal.engine.ddl.DDLConflatable;
+import com.pivotal.gemfirexd.internal.engine.ddl.ReplayableConflatable;
 import com.pivotal.gemfirexd.internal.engine.distributed.utils.GemFireXDUtils;
 import com.pivotal.gemfirexd.internal.iapi.services.sanity.SanityManager;
 
@@ -52,13 +52,13 @@ public class PersistentStateInRecoveryMode {
 
   public PersistentStateInRecoveryMode(
       List<Object> allEntries,
-      List<DDLConflatable> extractedDDLs) {
+      List<ReplayableConflatable> extractedDDLs) {
     member = Misc.getMyId();
     if (allEntries != null && !allEntries.isEmpty()) {
       catalogObjects.addAll(allEntries);
     }
     if (extractedDDLs != null && !extractedDDLs.isEmpty()) {
-      extractedDDLs.forEach(x -> otherExtractedDDLText.add(x.getValueToConflate()));
+      extractedDDLs.forEach(x -> otherExtractedDDLText.add(x.getSQLStatement()));
     }
     this.isServer = Misc.getMemStore().getMyVMKind().isStore();
   }

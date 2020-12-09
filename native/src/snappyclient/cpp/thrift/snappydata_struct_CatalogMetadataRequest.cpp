@@ -27,9 +27,9 @@ CatalogMetadataRequest::~CatalogMetadataRequest() noexcept {
 }
 
 
-void CatalogMetadataRequest::__set_schemaName(const std::string& val) {
-  this->schemaName = val;
-__isset.schemaName = true;
+void CatalogMetadataRequest::__set_databaseName(const std::string& val) {
+  this->databaseName = val;
+__isset.databaseName = true;
 }
 
 void CatalogMetadataRequest::__set_nameOrPattern(const std::string& val) {
@@ -64,8 +64,8 @@ uint32_t CatalogMetadataRequest::read(::apache::thrift::protocol::TProtocol* ipr
     {
       case 1:
         if (ftype == ::apache::thrift::protocol::T_STRING) {
-          xfer += iprot->readString(this->schemaName);
-          this->__isset.schemaName = true;
+          xfer += iprot->readString(this->databaseName);
+          this->__isset.databaseName = true;
         } else {
           xfer += iprot->skip(ftype);
         }
@@ -117,9 +117,9 @@ uint32_t CatalogMetadataRequest::write(::apache::thrift::protocol::TProtocol* op
   uint32_t xfer = 0;
   xfer += oprot->writeStructBegin("CatalogMetadataRequest");
 
-  if (this->__isset.schemaName) {
-    xfer += oprot->writeFieldBegin("schemaName", ::apache::thrift::protocol::T_STRING, 1);
-    xfer += oprot->writeString(this->schemaName);
+  if (this->__isset.databaseName) {
+    xfer += oprot->writeFieldBegin("databaseName", ::apache::thrift::protocol::T_STRING, 1);
+    xfer += oprot->writeString(this->databaseName);
     xfer += oprot->writeFieldEnd();
   }
   if (this->__isset.nameOrPattern) {
@@ -148,33 +148,33 @@ uint32_t CatalogMetadataRequest::write(::apache::thrift::protocol::TProtocol* op
 
 void swap(CatalogMetadataRequest &a, CatalogMetadataRequest &b) {
   using ::std::swap;
-  swap(a.schemaName, b.schemaName);
+  swap(a.databaseName, b.databaseName);
   swap(a.nameOrPattern, b.nameOrPattern);
   swap(a.properties, b.properties);
   swap(a.__isset, b.__isset);
 }
 
 CatalogMetadataRequest::CatalogMetadataRequest(const CatalogMetadataRequest& other454) {
-  schemaName = other454.schemaName;
+  databaseName = other454.databaseName;
   nameOrPattern = other454.nameOrPattern;
   properties = other454.properties;
   __isset = other454.__isset;
 }
 CatalogMetadataRequest::CatalogMetadataRequest( CatalogMetadataRequest&& other455) noexcept {
-  schemaName = std::move(other455.schemaName);
+  databaseName = std::move(other455.databaseName);
   nameOrPattern = std::move(other455.nameOrPattern);
   properties = std::move(other455.properties);
   __isset = std::move(other455.__isset);
 }
 CatalogMetadataRequest& CatalogMetadataRequest::operator=(const CatalogMetadataRequest& other456) {
-  schemaName = other456.schemaName;
+  databaseName = other456.databaseName;
   nameOrPattern = other456.nameOrPattern;
   properties = other456.properties;
   __isset = other456.__isset;
   return *this;
 }
 CatalogMetadataRequest& CatalogMetadataRequest::operator=(CatalogMetadataRequest&& other457) noexcept {
-  schemaName = std::move(other457.schemaName);
+  databaseName = std::move(other457.databaseName);
   nameOrPattern = std::move(other457.nameOrPattern);
   properties = std::move(other457.properties);
   __isset = std::move(other457.__isset);
@@ -183,7 +183,7 @@ CatalogMetadataRequest& CatalogMetadataRequest::operator=(CatalogMetadataRequest
 void CatalogMetadataRequest::printTo(std::ostream& out) const {
   using ::apache::thrift::to_string;
   out << "CatalogMetadataRequest(";
-  out << "schemaName="; (__isset.schemaName ? (out << to_string(schemaName)) : (out << "<null>"));
+  out << "databaseName="; (__isset.databaseName ? (out << to_string(databaseName)) : (out << "<null>"));
   out << ", " << "nameOrPattern="; (__isset.nameOrPattern ? (out << to_string(nameOrPattern)) : (out << "<null>"));
   out << ", " << "properties="; (__isset.properties ? (out << to_string(properties)) : (out << "<null>"));
   out << ")";

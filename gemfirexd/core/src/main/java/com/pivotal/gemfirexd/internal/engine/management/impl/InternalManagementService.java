@@ -399,7 +399,7 @@ public class InternalManagementService {
   }  
 
   private boolean hasInternalTableSchema(GemFireContainer container) {
-    for (String schema : CallbackFactoryProvider.getStoreCallbacks().getInternalTableSchemas()) {
+    for (String schema : CallbackFactoryProvider.getStoreCallbacks().getInternalTableDatabases()) {
       if (schema.equalsIgnoreCase(container.getSchemaName())) {
         return true;
       }

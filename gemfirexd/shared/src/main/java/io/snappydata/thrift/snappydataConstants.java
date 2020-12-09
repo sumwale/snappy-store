@@ -132,11 +132,11 @@ public class snappydataConstants {
 
   public static final byte STATEMENT_TYPE_DDL = (byte)5;
 
-  public static final int CATALOG_GET_SCHEMA = 1;
+  public static final int CATALOG_GET_DATABASE = 1;
 
-  public static final int CATALOG_SCHEMA_EXISTS = 2;
+  public static final int CATALOG_DATABASE_EXISTS = 2;
 
-  public static final int CATALOG_LIST_SCHEMAS = 3;
+  public static final int CATALOG_LIST_DATABASES = 3;
 
   public static final int CATALOG_GET_TABLE = 4;
 
@@ -156,9 +156,9 @@ public class snappydataConstants {
 
   public static final int CATALOG_LIST_PARTITIONS = 12;
 
-  public static final int CATALOG_CREATE_SCHEMA = 101;
+  public static final int CATALOG_CREATE_DATABASE = 101;
 
-  public static final int CATALOG_DROP_SCHEMA = 102;
+  public static final int CATALOG_DROP_DATABASE = 102;
 
   public static final int CATALOG_CREATE_TABLE = 103;
 

@@ -57,9 +57,9 @@ void CatalogMetadataDetails::__set_otherFlags(const std::vector<int32_t> & val) 
 __isset.otherFlags = true;
 }
 
-void CatalogMetadataDetails::__set_catalogSchema(const CatalogSchemaObject& val) {
-  this->catalogSchema = val;
-__isset.catalogSchema = true;
+void CatalogMetadataDetails::__set_catalogDatabase(const CatalogSchemaObject& val) {
+  this->catalogDatabase = val;
+__isset.catalogDatabase = true;
 }
 
 void CatalogMetadataDetails::__set_catalogTable(const CatalogTableObject& val) {
@@ -80,6 +80,11 @@ __isset.catalogPartitions = true;
 void CatalogMetadataDetails::__set_catalogStats(const CatalogStats& val) {
   this->catalogStats = val;
 __isset.catalogStats = true;
+}
+
+void CatalogMetadataDetails::__set_newSchema(const std::string& val) {
+  this->newSchema = val;
+__isset.newSchema = true;
 }
 
 uint32_t CatalogMetadataDetails::read(::apache::thrift::protocol::TProtocol* iprot) {
@@ -230,8 +235,8 @@ uint32_t CatalogMetadataDetails::read(::apache::thrift::protocol::TProtocol* ipr
         break;
       case 7:
         if (ftype == ::apache::thrift::protocol::T_STRUCT) {
-          xfer += this->catalogSchema.read(iprot);
-          this->__isset.catalogSchema = true;
+          xfer += this->catalogDatabase.read(iprot);
+          this->__isset.catalogDatabase = true;
         } else {
           xfer += iprot->skip(ftype);
         }
@@ -276,6 +281,14 @@ uint32_t CatalogMetadataDetails::read(::apache::thrift::protocol::TProtocol* ipr
         if (ftype == ::apache::thrift::protocol::T_STRUCT) {
           xfer += this->catalogStats.read(iprot);
           this->__isset.catalogStats = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
+      case 12:
+        if (ftype == ::apache::thrift::protocol::T_STRING) {
+          xfer += iprot->readString(this->newSchema);
+          this->__isset.newSchema = true;
         } else {
           xfer += iprot->skip(ftype);
         }
@@ -376,9 +389,9 @@ uint32_t CatalogMetadataDetails::write(::apache::thrift::protocol::TProtocol* op
     }
     xfer += oprot->writeFieldEnd();
   }
-  if (this->__isset.catalogSchema) {
-    xfer += oprot->writeFieldBegin("catalogSchema", ::apache::thrift::protocol::T_STRUCT, 7);
-    xfer += this->catalogSchema.write(oprot);
+  if (this->__isset.catalogDatabase) {
+    xfer += oprot->writeFieldBegin("catalogDatabase", ::apache::thrift::protocol::T_STRUCT, 7);
+    xfer += this->catalogDatabase.write(oprot);
     xfer += oprot->writeFieldEnd();
   }
   if (this->__isset.catalogTable) {
@@ -409,6 +422,11 @@ uint32_t CatalogMetadataDetails::write(::apache::thrift::protocol::TProtocol* op
     xfer += this->catalogStats.write(oprot);
     xfer += oprot->writeFieldEnd();
   }
+  if (this->__isset.newSchema) {
+    xfer += oprot->writeFieldBegin("newSchema", ::apache::thrift::protocol::T_STRING, 12);
+    xfer += oprot->writeString(this->newSchema);
+    xfer += oprot->writeFieldEnd();
+  }
   xfer += oprot->writeFieldStop();
   xfer += oprot->writeStructEnd();
   return xfer;
@@ -422,11 +440,12 @@ void swap(CatalogMetadataDetails &a, CatalogMetadataDetails &b) {
   swap(a.catalogSchemaVersion, b.catalogSchemaVersion);
   swap(a.exists, b.exists);
   swap(a.otherFlags, b.otherFlags);
-  swap(a.catalogSchema, b.catalogSchema);
+  swap(a.catalogDatabase, b.catalogDatabase);
   swap(a.catalogTable, b.catalogTable);
   swap(a.catalogFunction, b.catalogFunction);
   swap(a.catalogPartitions, b.catalogPartitions);
   swap(a.catalogStats, b.catalogStats);
+  swap(a.newSchema, b.newSchema);
   swap(a.__isset, b.__isset);
 }
 
@@ -437,11 +456,12 @@ CatalogMetadataDetails::CatalogMetadataDetails(const CatalogMetadataDetails& oth
   catalogSchemaVersion = other504.catalogSchemaVersion;
   exists = other504.exists;
   otherFlags = other504.otherFlags;
-  catalogSchema = other504.catalogSchema;
+  catalogDatabase = other504.catalogDatabase;
   catalogTable = other504.catalogTable;
   catalogFunction = other504.catalogFunction;
   catalogPartitions = other504.catalogPartitions;
   catalogStats = other504.catalogStats;
+  newSchema = other504.newSchema;
   __isset = other504.__isset;
 }
 CatalogMetadataDetails::CatalogMetadataDetails( CatalogMetadataDetails&& other505) noexcept {
@@ -451,11 +471,12 @@ CatalogMetadataDetails::CatalogMetadataDetails( CatalogMetadataDetails&& other50
   catalogSchemaVersion = std::move(other505.catalogSchemaVersion);
   exists = std::move(other505.exists);
   otherFlags = std::move(other505.otherFlags);
-  catalogSchema = std::move(other505.catalogSchema);
+  catalogDatabase = std::move(other505.catalogDatabase);
   catalogTable = std::move(other505.catalogTable);
   catalogFunction = std::move(other505.catalogFunction);
   catalogPartitions = std::move(other505.catalogPartitions);
   catalogStats = std::move(other505.catalogStats);
+  newSchema = std::move(other505.newSchema);
   __isset = std::move(other505.__isset);
 }
 CatalogMetadataDetails& CatalogMetadataDetails::operator=(const CatalogMetadataDetails& other506) {
@@ -465,11 +486,12 @@ CatalogMetadataDetails& CatalogMetadataDetails::operator=(const CatalogMetadataD
   catalogSchemaVersion = other506.catalogSchemaVersion;
   exists = other506.exists;
   otherFlags = other506.otherFlags;
-  catalogSchema = other506.catalogSchema;
+  catalogDatabase = other506.catalogDatabase;
   catalogTable = other506.catalogTable;
   catalogFunction = other506.catalogFunction;
   catalogPartitions = other506.catalogPartitions;
   catalogStats = other506.catalogStats;
+  newSchema = other506.newSchema;
   __isset = other506.__isset;
   return *this;
 }
@@ -480,11 +502,12 @@ CatalogMetadataDetails& CatalogMetadataDetails::operator=(CatalogMetadataDetails
   catalogSchemaVersion = std::move(other507.catalogSchemaVersion);
   exists = std::move(other507.exists);
   otherFlags = std::move(other507.otherFlags);
-  catalogSchema = std::move(other507.catalogSchema);
+  catalogDatabase = std::move(other507.catalogDatabase);
   catalogTable = std::move(other507.catalogTable);
   catalogFunction = std::move(other507.catalogFunction);
   catalogPartitions = std::move(other507.catalogPartitions);
   catalogStats = std::move(other507.catalogStats);
+  newSchema = std::move(other507.newSchema);
   __isset = std::move(other507.__isset);
   return *this;
 }
@@ -497,11 +520,12 @@ void CatalogMetadataDetails::printTo(std::ostream& out) const {
   out << ", " << "catalogSchemaVersion="; (__isset.catalogSchemaVersion ? (out << to_string(catalogSchemaVersion)) : (out << "<null>"));
   out << ", " << "exists="; (__isset.exists ? (out << to_string(exists)) : (out << "<null>"));
   out << ", " << "otherFlags="; (__isset.otherFlags ? (out << to_string(otherFlags)) : (out << "<null>"));
-  out << ", " << "catalogSchema="; (__isset.catalogSchema ? (out << to_string(catalogSchema)) : (out << "<null>"));
+  out << ", " << "catalogDatabase="; (__isset.catalogDatabase ? (out << to_string(catalogDatabase)) : (out << "<null>"));
   out << ", " << "catalogTable="; (__isset.catalogTable ? (out << to_string(catalogTable)) : (out << "<null>"));
   out << ", " << "catalogFunction="; (__isset.catalogFunction ? (out << to_string(catalogFunction)) : (out << "<null>"));
   out << ", " << "catalogPartitions="; (__isset.catalogPartitions ? (out << to_string(catalogPartitions)) : (out << "<null>"));
   out << ", " << "catalogStats="; (__isset.catalogStats ? (out << to_string(catalogStats)) : (out << "<null>"));
+  out << ", " << "newSchema="; (__isset.newSchema ? (out << to_string(newSchema)) : (out << "<null>"));
   out << ")";
 }
 

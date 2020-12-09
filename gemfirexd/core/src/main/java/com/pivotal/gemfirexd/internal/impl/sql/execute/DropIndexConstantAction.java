@@ -78,7 +78,7 @@ import java.util.Enumeration;
  *
  */
 
-class DropIndexConstantAction extends IndexConstantAction
+public class DropIndexConstantAction extends IndexConstantAction
 {
 
 	private String				fullIndexName;

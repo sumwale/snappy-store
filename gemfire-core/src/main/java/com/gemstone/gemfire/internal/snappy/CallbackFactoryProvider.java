@@ -50,7 +50,7 @@ public abstract class CallbackFactoryProvider {
     }
 
     @Override
-    public List<String> getInternalTableSchemas() {
+    public List<String> getInternalTableDatabases() {
       return Collections.emptyList();
     }
 
@@ -196,7 +196,7 @@ public abstract class CallbackFactoryProvider {
     }
 
     @Override
-    public String checkSchemaPermission(String schema, String currentUser) {
+    public String checkDatabasePermission(String db, String currentUser) {
       return null;
     }
 

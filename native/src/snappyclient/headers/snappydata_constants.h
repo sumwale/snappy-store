@@ -64,9 +64,9 @@ class snappydataConstants {
   static const int8_t STATEMENT_TYPE_DELETE = 3;
   static const int8_t STATEMENT_TYPE_CALL = 4;
   static const int8_t STATEMENT_TYPE_DDL = 5;
-  static const int32_t CATALOG_GET_SCHEMA = 1;
-  static const int32_t CATALOG_SCHEMA_EXISTS = 2;
-  static const int32_t CATALOG_LIST_SCHEMAS = 3;
+  static const int32_t CATALOG_GET_DATABASE = 1;
+  static const int32_t CATALOG_DATABASE_EXISTS = 2;
+  static const int32_t CATALOG_LIST_DATABASES = 3;
   static const int32_t CATALOG_GET_TABLE = 4;
   static const int32_t CATALOG_TABLE_EXISTS = 5;
   static const int32_t CATALOG_LIST_TABLES = 6;
@@ -76,8 +76,8 @@ class snappydataConstants {
   static const int32_t CATALOG_GET_PARTITION = 10;
   static const int32_t CATALOG_LIST_PARTITION_NAMES = 11;
   static const int32_t CATALOG_LIST_PARTITIONS = 12;
-  static const int32_t CATALOG_CREATE_SCHEMA = 101;
-  static const int32_t CATALOG_DROP_SCHEMA = 102;
+  static const int32_t CATALOG_CREATE_DATABASE = 101;
+  static const int32_t CATALOG_DROP_DATABASE = 102;
   static const int32_t CATALOG_CREATE_TABLE = 103;
   static const int32_t CATALOG_DROP_TABLE = 104;
   static const int32_t CATALOG_ALTER_TABLE = 105;
@@ -94,6 +94,7 @@ class snappydataConstants {
   static const int32_t CATALOG_RENAME_PARTITIONS = 116;
   static const int32_t CATALOG_LOAD_PARTITION = 117;
   static const int32_t CATALOG_LOAD_DYNAMIC_PARTITIONS = 118;
+  static const int32_t CATALOG_ALTER_TABLE_SCHEMA = 119;
   static const int8_t BULK_CLOSE_RESULTSET = 1;
   static const int8_t BULK_CLOSE_LOB = 2;
   static const int8_t BULK_CLOSE_STATEMENT = 3;

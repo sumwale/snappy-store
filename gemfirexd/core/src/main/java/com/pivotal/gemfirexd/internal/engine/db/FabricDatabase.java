@@ -53,18 +53,21 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.regex.Pattern;
 
 import com.gemstone.gemfire.CancelException;
 import com.gemstone.gemfire.LogWriter;
-import com.gemstone.gemfire.cache.*;
+import com.gemstone.gemfire.cache.DataPolicy;
+import com.gemstone.gemfire.cache.EvictionAction;
+import com.gemstone.gemfire.cache.EvictionAttributes;
+import com.gemstone.gemfire.cache.Operation;
+import com.gemstone.gemfire.cache.Region;
+import com.gemstone.gemfire.cache.Scope;
 import com.gemstone.gemfire.distributed.internal.DistributionManager;
 import com.gemstone.gemfire.distributed.internal.InternalDistributedSystem;
 import com.gemstone.gemfire.internal.ClassPathLoader;
 import com.gemstone.gemfire.internal.GFToSlf4jBridge;
 import com.gemstone.gemfire.internal.LogWriterImpl;
 import com.gemstone.gemfire.internal.cache.*;
-import com.gemstone.gemfire.internal.cache.persistence.PRPersistentConfig;
 import com.gemstone.gemfire.internal.shared.SystemProperties;
 import com.gemstone.gemfire.internal.util.ArrayUtils;
 import com.gemstone.gnu.trove.THashMap;
@@ -83,11 +86,13 @@ import com.pivotal.gemfirexd.internal.engine.Misc;
 import com.pivotal.gemfirexd.internal.engine.access.GemFireTransaction;
 import com.pivotal.gemfirexd.internal.engine.access.index.GfxdIndexManager;
 import com.pivotal.gemfirexd.internal.engine.access.index.MemIndex;
-import com.pivotal.gemfirexd.internal.engine.ddl.*;
+import com.pivotal.gemfirexd.internal.engine.ddl.DDLConflatable;
+import com.pivotal.gemfirexd.internal.engine.ddl.GfxdDDLQueueEntry;
+import com.pivotal.gemfirexd.internal.engine.ddl.GfxdDDLRegionQueue;
+import com.pivotal.gemfirexd.internal.engine.ddl.ReplayableConflatable;
 import com.pivotal.gemfirexd.internal.engine.ddl.catalog.GfxdSystemProcedures;
 import com.pivotal.gemfirexd.internal.engine.ddl.catalog.messages.GfxdSystemProcedureMessage;
 import com.pivotal.gemfirexd.internal.engine.ddl.wan.messages.AbstractGfxdReplayableMessage;
-import com.pivotal.gemfirexd.internal.engine.distributed.GfxdListResultCollector;
 import com.pivotal.gemfirexd.internal.engine.distributed.GfxdMessage;
 import com.pivotal.gemfirexd.internal.engine.distributed.message.PersistentStateInRecoveryMode;
 import com.pivotal.gemfirexd.internal.engine.distributed.utils.GemFireXDUtils;
@@ -147,7 +152,6 @@ import com.pivotal.gemfirexd.internal.impl.sql.catalog.XPLAINTableDescriptor;
 import com.pivotal.gemfirexd.internal.io.StorageFile;
 import com.pivotal.gemfirexd.internal.shared.common.error.ExceptionSeverity;
 import com.pivotal.gemfirexd.internal.snappy.CallbackFactoryProvider;
-import io.snappydata.thrift.CatalogTableObject;
 
 /**
  * The Database interface provides control over the physical database (that is,
@@ -722,7 +726,7 @@ public final class FabricDatabase implements ModuleControl,
 //    SanityManager.DEBUG_PRINT("info", "hiveDBTablesMap = " + hiveDBTablesMap);
 
     // remove Hive store's own tables
-    gfDBTablesMap.remove(externalCatalog.catalogSchemaName());
+    gfDBTablesMap.remove(externalCatalog.catalogDatabaseName());
     // CachedBatch tables (earlier stored in SNAPPYSYS_INTERNAL)
     List<String> internalColumnTablesList = new LinkedList<>();
     List<String> internalColumnTablesListPerSchema = new LinkedList<>();
@@ -1135,8 +1139,7 @@ public final class FabricDatabase implements ModuleControl,
 
         final boolean recoveryMode = this.memStore.getGemFireCache().isSnappyRecoveryMode();
         if (recoveryMode) {
-          preprocessedQueue =
-            getOnlyRequiredDdlsForRecoveryMode(preprocessedQueue, logger);
+          preprocessedQueue = getOnlyRequiredDdlsForRecoveryMode(preprocessedQueue, logger);
         }
         for (GfxdDDLQueueEntry entry : preprocessedQueue) {
           qEntry = entry;
@@ -1197,8 +1200,7 @@ public final class FabricDatabase implements ModuleControl,
             final DDLConflatable conflatable = (DDLConflatable) qVal;
             String schemaForTable = conflatable.getSchemaForTableNoThrow();
             if (!recoveryMode && this.memStore.restrictedDDLStmtQueue() &&
-                !(!disallowMetastoreOnLocator &&
-                    schemaForTable != null && Misc.isSnappyHiveMetaTable(schemaForTable))) {
+                !(!disallowMetastoreOnLocator && Misc.isSnappyHiveMetaTable(schemaForTable))) {
               continue;
             }
             // check for any merged DDLs
@@ -1627,54 +1629,42 @@ public final class FabricDatabase implements ModuleControl,
     }
   }
 
-  private List<DDLConflatable> otherExtractedDDLs = new ArrayList<>();
+  private final List<ReplayableConflatable> otherExtractedDDLs = new ArrayList<>();
 
   private List<GfxdDDLQueueEntry> getOnlyRequiredDdlsForRecoveryMode(
       List<GfxdDDLQueueEntry> preprocessedQueue, final LogWriter logger) {
-    GfxdDDLQueueEntry qEntry = null;
     List<GfxdDDLQueueEntry> list = new ArrayList<>();
     logger.fine("Get the DDLs required for RecoveryMode.");
     for (GfxdDDLQueueEntry entry : preprocessedQueue) {
-      qEntry = entry;
-      Object qVal = qEntry.getValue();
+      Object qVal = entry.getValue();
       if (qVal instanceof DDLConflatable) {
-        final DDLConflatable conflatable = (DDLConflatable) qVal;
+        final DDLConflatable conflatable = (DDLConflatable)qVal;
         String schema = conflatable.getSchemaForTableNoThrow();
-        if (conflatable.isCreateDiskStore()) {
-          logger.info("Adding create disk store statement ddl = " + conflatable);
-          list.add(qEntry);
+        if (schema == null) schema = conflatable.getCurrentSchema();
+        if (conflatable.isCreateDiskStore() || conflatable.isDropDiskStore()) {
+          logger.info("Adding create/drop disk store statement ddl = " + conflatable);
+          list.add(entry);
           otherExtractedDDLs.add(conflatable);
-        } else if (Misc.SNAPPY_HIVE_METASTORE.equals(schema) ||
-            Misc.SNAPPY_HIVE_METASTORE.equals(conflatable.getCurrentSchema()) ||
-            Misc.SNAPPY_HIVE_METASTORE.equals(conflatable.getRegionToConflate())) {
-          logger.info("Adding conflatable for DDL replay = " + qEntry);
-          list.add(qEntry);
-        } else if (conflatable.isAlterTable() ||
-            conflatable.isCreateIndex() ||
-            isGrantRevokeStatement(conflatable) ||
-             conflatable.isCreateTable() ||
-            conflatable.isDropStatement() ||
-            conflatable.isCreateSchemaText()) {
+        } else if (Misc.SNAPPY_HIVE_METASTORE.equalsIgnoreCase(schema) ||
+            Misc.SNAPPY_HIVE_METASTORE.equalsIgnoreCase(conflatable.getRegionToConflate())) {
+          logger.info("Adding conflatable for DDL replay = " + entry);
+          list.add(entry);
+        } else if (conflatable.isCreateSchema() || conflatable.isDropSchema() ||
+            conflatable.isCreateIndex() || conflatable.isDropIndex() ||
+            conflatable.isGrantStatement() || conflatable.isRevokeStatement() ||
+            conflatable.isCreateTrigger() || conflatable.isDropTrigger()) {
           logger.fine("Adding to Extracted DDLs list: DDL statement = " + conflatable);
           otherExtractedDDLs.add(conflatable);
         } else {
           logger.info("Skipping conflatable = " + conflatable);
         }
+      } else if (qVal instanceof AbstractGfxdReplayableMessage) {
+        final AbstractGfxdReplayableMessage msg = (AbstractGfxdReplayableMessage)qVal;
+        logger.fine("Adding to Extracted DDLs list: System statement = " + msg);
+        otherExtractedDDLs.add(msg);
       }
     }
     return list;
-  }
-
-  private final static Pattern GRANTREVOKE_PATTERN =
-      Pattern.compile(
-          "(GRANT|REVOKE)\\s+(\\S+)\\s+(ON)\\s+(TABLE)?\\s+(\\S+)\\s+(TO|FROM)\\s+(\\S+)",
-          Pattern.CASE_INSENSITIVE);
-
-  private boolean isGrantRevokeStatement(DDLConflatable conflatable) {
-    String sqlText = conflatable.getValueToConflate();
-    // return (sqlText != null && GRANTREVOKE_PATTERN.matcher(sqlText).matches());
-    return sqlText != null && (sqlText.toUpperCase().startsWith("GRANT") ||
-        sqlText.toUpperCase().startsWith("REVOKE"));
   }
 
   private void preparePersistentStatesMsg(
@@ -1983,7 +1973,7 @@ public final class FabricDatabase implements ModuleControl,
       lastCurrentSchema = currentSchema;
     }
     if (GemFireXDUtils.TraceIndex) {
-      if (conflatable.isCreateIndex() || conflatable.isCreateIndex()) {
+      if (conflatable.isCreateIndex() || conflatable.isDropIndex()) {
         GfxdIndexManager.traceIndex("executeDDL::executing "
             + "sqlText=%s and skipRegionInitialization=%s", sqlText,
             skipRegionInitialization);
@@ -2018,7 +2008,7 @@ public final class FabricDatabase implements ModuleControl,
         // #48232: ignore the exception, the schema may have been 
         // created already
         if (("X0Y68".equals(((SQLException)ex).getSQLState()) &&
-        conflatable.isCreateSchemaText()) 
+        conflatable.isCreateSchema()) 
         ||
         //#50116: ignore drop FK constraint since we may  
         //not create it during DDL replay (since parent 

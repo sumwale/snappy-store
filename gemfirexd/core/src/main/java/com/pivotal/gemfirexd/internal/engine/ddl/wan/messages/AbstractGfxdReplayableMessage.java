@@ -187,16 +187,6 @@ public abstract class AbstractGfxdReplayableMessage extends GfxdMessage
    */
   public abstract void execute() throws StandardException;
 
-  /**
-   * Get the equivalent SQL statement for this message.
-   * 
-   * @return the equivalent SQL statement for this message
-   * 
-   * @throws StandardException
-   *           on error
-   */
-  public abstract String getSQLStatement() throws StandardException;
-
   /** get the schema that will be used for this message */
   public String getSchemaName() {
     return null;

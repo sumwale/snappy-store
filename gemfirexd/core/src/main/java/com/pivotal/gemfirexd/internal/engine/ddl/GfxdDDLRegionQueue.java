@@ -797,9 +797,6 @@ public final class GfxdDDLRegionQueue implements RegionQueue {
         new ArrayList<GfxdDDLQueueEntry>();
     ListIterator<GfxdDDLQueueEntry> iter = currentQueue.listIterator();
     GfxdDDLPreprocessOrPostProcess preprocessMsg;
-    if (currentSchema == null) {
-      currentSchema = SchemaDescriptor.STD_DEFAULT_SCHEMA_NAME;
-    }
     while (iter.hasNext()) {
       final GfxdDDLQueueEntry entry = iter.next();
       final Object qVal = entry.getValue();
@@ -844,7 +841,7 @@ public final class GfxdDDLRegionQueue implements RegionQueue {
           if (newSchema == null) {
             newSchema = SchemaDescriptor.STD_DEFAULT_SCHEMA_NAME;
           }
-          if (!currentSchema.equals(newSchema)) {
+          if (!newSchema.equalsIgnoreCase(currentSchema)) {
             DDLConflatable schemaDDL = new DDLConflatable("SET SCHEMA \""
                 + newSchema + '"', newSchema, new CreateSchemaConstantAction(
                 newSchema, null), null, null, 0, true, null);

@@ -42,18 +42,19 @@
 namespace io { namespace snappydata { namespace thrift {
 
 typedef struct _CatalogMetadataDetails__isset {
-  _CatalogMetadataDetails__isset() : names(false), properties(false), newProperties(false), catalogSchemaVersion(false), exists(false), otherFlags(false), catalogSchema(false), catalogTable(false), catalogFunction(false), catalogPartitions(false), catalogStats(false) {}
+  _CatalogMetadataDetails__isset() : names(false), properties(false), newProperties(false), catalogSchemaVersion(false), exists(false), otherFlags(false), catalogDatabase(false), catalogTable(false), catalogFunction(false), catalogPartitions(false), catalogStats(false), newSchema(false) {}
   bool names :1;
   bool properties :1;
   bool newProperties :1;
   bool catalogSchemaVersion :1;
   bool exists :1;
   bool otherFlags :1;
-  bool catalogSchema :1;
+  bool catalogDatabase :1;
   bool catalogTable :1;
   bool catalogFunction :1;
   bool catalogPartitions :1;
   bool catalogStats :1;
+  bool newSchema :1;
 } _CatalogMetadataDetails__isset;
 
 class CatalogMetadataDetails {
@@ -63,7 +64,7 @@ class CatalogMetadataDetails {
   CatalogMetadataDetails(CatalogMetadataDetails&&) noexcept;
   CatalogMetadataDetails& operator=(const CatalogMetadataDetails&);
   CatalogMetadataDetails& operator=(CatalogMetadataDetails&&) noexcept;
-  CatalogMetadataDetails() : catalogSchemaVersion(0), exists(0) {
+  CatalogMetadataDetails() : catalogSchemaVersion(0), exists(0), newSchema() {
   }
 
   virtual ~CatalogMetadataDetails() noexcept;
@@ -73,11 +74,12 @@ class CatalogMetadataDetails {
   int64_t catalogSchemaVersion;
   bool exists;
   std::vector<int32_t>  otherFlags;
-  CatalogSchemaObject catalogSchema;
+  CatalogSchemaObject catalogDatabase;
   CatalogTableObject catalogTable;
   CatalogFunctionObject catalogFunction;
   std::vector<CatalogPartitionObject>  catalogPartitions;
   CatalogStats catalogStats;
+  std::string newSchema;
 
   _CatalogMetadataDetails__isset __isset;
 
@@ -93,7 +95,7 @@ class CatalogMetadataDetails {
 
   void __set_otherFlags(const std::vector<int32_t> & val);
 
-  void __set_catalogSchema(const CatalogSchemaObject& val);
+  void __set_catalogDatabase(const CatalogSchemaObject& val);
 
   void __set_catalogTable(const CatalogTableObject& val);
 
@@ -102,6 +104,8 @@ class CatalogMetadataDetails {
   void __set_catalogPartitions(const std::vector<CatalogPartitionObject> & val);
 
   void __set_catalogStats(const CatalogStats& val);
+
+  void __set_newSchema(const std::string& val);
 
   bool operator == (const CatalogMetadataDetails & rhs) const
   {
@@ -129,9 +133,9 @@ class CatalogMetadataDetails {
       return false;
     else if (__isset.otherFlags && !(otherFlags == rhs.otherFlags))
       return false;
-    if (__isset.catalogSchema != rhs.__isset.catalogSchema)
+    if (__isset.catalogDatabase != rhs.__isset.catalogDatabase)
       return false;
-    else if (__isset.catalogSchema && !(catalogSchema == rhs.catalogSchema))
+    else if (__isset.catalogDatabase && !(catalogDatabase == rhs.catalogDatabase))
       return false;
     if (__isset.catalogTable != rhs.__isset.catalogTable)
       return false;
@@ -148,6 +152,10 @@ class CatalogMetadataDetails {
     if (__isset.catalogStats != rhs.__isset.catalogStats)
       return false;
     else if (__isset.catalogStats && !(catalogStats == rhs.catalogStats))
+      return false;
+    if (__isset.newSchema != rhs.__isset.newSchema)
+      return false;
+    else if (__isset.newSchema && !(newSchema == rhs.newSchema))
       return false;
     return true;
   }

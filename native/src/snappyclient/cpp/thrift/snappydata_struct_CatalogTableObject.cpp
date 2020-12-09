@@ -31,9 +31,9 @@ void CatalogTableObject::__set_tableName(const std::string& val) {
   this->tableName = val;
 }
 
-void CatalogTableObject::__set_schemaName(const std::string& val) {
-  this->schemaName = val;
-__isset.schemaName = true;
+void CatalogTableObject::__set_databaseName(const std::string& val) {
+  this->databaseName = val;
+__isset.databaseName = true;
 }
 
 void CatalogTableObject::__set_tableType(const std::string& val) {
@@ -187,8 +187,8 @@ uint32_t CatalogTableObject::read(::apache::thrift::protocol::TProtocol* iprot) 
         break;
       case 2:
         if (ftype == ::apache::thrift::protocol::T_STRING) {
-          xfer += iprot->readString(this->schemaName);
-          this->__isset.schemaName = true;
+          xfer += iprot->readString(this->databaseName);
+          this->__isset.databaseName = true;
         } else {
           xfer += iprot->skip(ftype);
         }
@@ -553,9 +553,9 @@ uint32_t CatalogTableObject::write(::apache::thrift::protocol::TProtocol* oprot)
   xfer += oprot->writeString(this->tableName);
   xfer += oprot->writeFieldEnd();
 
-  if (this->__isset.schemaName) {
-    xfer += oprot->writeFieldBegin("schemaName", ::apache::thrift::protocol::T_STRING, 2);
-    xfer += oprot->writeString(this->schemaName);
+  if (this->__isset.databaseName) {
+    xfer += oprot->writeFieldBegin("databaseName", ::apache::thrift::protocol::T_STRING, 2);
+    xfer += oprot->writeString(this->databaseName);
     xfer += oprot->writeFieldEnd();
   }
   xfer += oprot->writeFieldBegin("tableType", ::apache::thrift::protocol::T_STRING, 3);
@@ -744,7 +744,7 @@ uint32_t CatalogTableObject::write(::apache::thrift::protocol::TProtocol* oprot)
 void swap(CatalogTableObject &a, CatalogTableObject &b) {
   using ::std::swap;
   swap(a.tableName, b.tableName);
-  swap(a.schemaName, b.schemaName);
+  swap(a.databaseName, b.databaseName);
   swap(a.tableType, b.tableType);
   swap(a.storage, b.storage);
   swap(a.tableSchema, b.tableSchema);
@@ -774,7 +774,7 @@ void swap(CatalogTableObject &a, CatalogTableObject &b) {
 
 CatalogTableObject::CatalogTableObject(const CatalogTableObject& other412) {
   tableName = other412.tableName;
-  schemaName = other412.schemaName;
+  databaseName = other412.databaseName;
   tableType = other412.tableType;
   storage = other412.storage;
   tableSchema = other412.tableSchema;
@@ -803,7 +803,7 @@ CatalogTableObject::CatalogTableObject(const CatalogTableObject& other412) {
 }
 CatalogTableObject::CatalogTableObject( CatalogTableObject&& other413) noexcept {
   tableName = std::move(other413.tableName);
-  schemaName = std::move(other413.schemaName);
+  databaseName = std::move(other413.databaseName);
   tableType = std::move(other413.tableType);
   storage = std::move(other413.storage);
   tableSchema = std::move(other413.tableSchema);
@@ -832,7 +832,7 @@ CatalogTableObject::CatalogTableObject( CatalogTableObject&& other413) noexcept 
 }
 CatalogTableObject& CatalogTableObject::operator=(const CatalogTableObject& other414) {
   tableName = other414.tableName;
-  schemaName = other414.schemaName;
+  databaseName = other414.databaseName;
   tableType = other414.tableType;
   storage = other414.storage;
   tableSchema = other414.tableSchema;
@@ -862,7 +862,7 @@ CatalogTableObject& CatalogTableObject::operator=(const CatalogTableObject& othe
 }
 CatalogTableObject& CatalogTableObject::operator=(CatalogTableObject&& other415) noexcept {
   tableName = std::move(other415.tableName);
-  schemaName = std::move(other415.schemaName);
+  databaseName = std::move(other415.databaseName);
   tableType = std::move(other415.tableType);
   storage = std::move(other415.storage);
   tableSchema = std::move(other415.tableSchema);
@@ -894,7 +894,7 @@ void CatalogTableObject::printTo(std::ostream& out) const {
   using ::apache::thrift::to_string;
   out << "CatalogTableObject(";
   out << "tableName=" << to_string(tableName);
-  out << ", " << "schemaName="; (__isset.schemaName ? (out << to_string(schemaName)) : (out << "<null>"));
+  out << ", " << "databaseName="; (__isset.databaseName ? (out << to_string(databaseName)) : (out << "<null>"));
   out << ", " << "tableType=" << to_string(tableType);
   out << ", " << "storage=" << to_string(storage);
   out << ", " << "tableSchema=" << to_string(tableSchema);

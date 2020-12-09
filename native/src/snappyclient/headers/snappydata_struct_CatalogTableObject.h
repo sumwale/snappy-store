@@ -38,8 +38,8 @@
 namespace io { namespace snappydata { namespace thrift {
 
 typedef struct _CatalogTableObject__isset {
-  _CatalogTableObject__isset() : schemaName(false), provider(false), numBuckets(false), redundancy(false), stats(false), viewOriginalText(false), viewText(false), comment(false), ignoredProperties(false) {}
-  bool schemaName :1;
+  _CatalogTableObject__isset() : databaseName(false), provider(false), numBuckets(false), redundancy(false), stats(false), viewOriginalText(false), viewText(false), comment(false), ignoredProperties(false) {}
+  bool databaseName :1;
   bool provider :1;
   bool numBuckets :1;
   bool redundancy :1;
@@ -57,12 +57,12 @@ class CatalogTableObject {
   CatalogTableObject(CatalogTableObject&&) noexcept;
   CatalogTableObject& operator=(const CatalogTableObject&);
   CatalogTableObject& operator=(CatalogTableObject&&) noexcept;
-  CatalogTableObject() : tableName(), schemaName(), tableType(), tableSchema(), provider(), numBuckets(0), redundancy(0), owner(), createTime(0), lastAccessTime(0), viewOriginalText(), viewText(), comment(), tracksPartitionsInCatalog(0), schemaPreservesCase(0) {
+  CatalogTableObject() : tableName(), databaseName(), tableType(), tableSchema(), provider(), numBuckets(0), redundancy(0), owner(), createTime(0), lastAccessTime(0), viewOriginalText(), viewText(), comment(), tracksPartitionsInCatalog(0), schemaPreservesCase(0) {
   }
 
   virtual ~CatalogTableObject() noexcept;
   std::string tableName;
-  std::string schemaName;
+  std::string databaseName;
   std::string tableType;
   CatalogStorage storage;
   std::string tableSchema;
@@ -92,7 +92,7 @@ class CatalogTableObject {
 
   void __set_tableName(const std::string& val);
 
-  void __set_schemaName(const std::string& val);
+  void __set_databaseName(const std::string& val);
 
   void __set_tableType(const std::string& val);
 
@@ -146,9 +146,9 @@ class CatalogTableObject {
   {
     if (!(tableName == rhs.tableName))
       return false;
-    if (__isset.schemaName != rhs.__isset.schemaName)
+    if (__isset.databaseName != rhs.__isset.databaseName)
       return false;
-    else if (__isset.schemaName && !(schemaName == rhs.schemaName))
+    else if (__isset.databaseName && !(databaseName == rhs.databaseName))
       return false;
     if (!(tableType == rhs.tableType))
       return false;

@@ -39,8 +39,8 @@
 namespace io { namespace snappydata { namespace thrift {
 
 typedef struct _CatalogFunctionObject__isset {
-  _CatalogFunctionObject__isset() : schemaName(false) {}
-  bool schemaName :1;
+  _CatalogFunctionObject__isset() : databaseName(false) {}
+  bool databaseName :1;
 } _CatalogFunctionObject__isset;
 
 class CatalogFunctionObject {
@@ -50,12 +50,12 @@ class CatalogFunctionObject {
   CatalogFunctionObject(CatalogFunctionObject&&) noexcept;
   CatalogFunctionObject& operator=(const CatalogFunctionObject&);
   CatalogFunctionObject& operator=(CatalogFunctionObject&&) noexcept;
-  CatalogFunctionObject() : functionName(), schemaName(), className() {
+  CatalogFunctionObject() : functionName(), databaseName(), className() {
   }
 
   virtual ~CatalogFunctionObject() noexcept;
   std::string functionName;
-  std::string schemaName;
+  std::string databaseName;
   std::string className;
   std::vector<std::string>  resources;
 
@@ -63,7 +63,7 @@ class CatalogFunctionObject {
 
   void __set_functionName(const std::string& val);
 
-  void __set_schemaName(const std::string& val);
+  void __set_databaseName(const std::string& val);
 
   void __set_className(const std::string& val);
 
@@ -73,9 +73,9 @@ class CatalogFunctionObject {
   {
     if (!(functionName == rhs.functionName))
       return false;
-    if (__isset.schemaName != rhs.__isset.schemaName)
+    if (__isset.databaseName != rhs.__isset.databaseName)
       return false;
-    else if (__isset.schemaName && !(schemaName == rhs.schemaName))
+    else if (__isset.databaseName && !(databaseName == rhs.databaseName))
       return false;
     if (!(className == rhs.className))
       return false;

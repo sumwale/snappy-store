@@ -2312,8 +2312,12 @@ public final class GfxdSystemProcedureMessage extends
    * {@inheritDoc}
    */
   @Override
-  public String getSQLStatement() throws StandardException {
-    return this.procMethod.getSQLStatement(this.params);
+  public String getSQLStatement() {
+    try {
+      return this.procMethod.getSQLStatement(this.params);
+    } catch (StandardException se) {
+      throw new RuntimeException(se);
+    }
   }
 
   public SysProcMethod getSysProcMethod() {

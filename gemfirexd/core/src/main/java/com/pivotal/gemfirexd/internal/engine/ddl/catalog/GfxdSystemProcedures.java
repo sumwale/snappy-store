@@ -1230,12 +1230,12 @@ public class GfxdSystemProcedures extends SystemProcedures {
         private final Iterator<GfxdDDLQueueEntry> ddlIter = ddlQ
             .getPreprocessedDDLQueue(allDDLs, null, null, null, false)
             .iterator();
+        private final boolean debugOn = SanityManager.DEBUG_ON("ExportDDLs");
 
         @Override
         public boolean getNext(DataValueDescriptor[] template)
             throws StandardException {
-          final boolean debugOn = SanityManager.DEBUG_ON("ExportDDLs");
-          String currentSchema;
+          String sqlSchema;
           // get all elements in the queue removing them from the queue
           // but not from the underlying region
           while (this.ddlIter.hasNext()) {
@@ -1247,32 +1247,32 @@ public class GfxdSystemProcedures extends SystemProcedures {
             }
             if (val instanceof DDLConflatable) {
               final DDLConflatable ddl = (DDLConflatable)val;
-              currentSchema = ddl.getCurrentSchema();
-              if (currentSchema == null) {
-                currentSchema = SchemaDescriptor.STD_DEFAULT_SCHEMA_NAME;
+              sqlSchema = ddl.getSchemaForTableNoThrow();
+              if (sqlSchema == null) {
+                sqlSchema = ddl.getCurrentSchema();
+                if (sqlSchema == null) {
+                  sqlSchema = SchemaDescriptor.STD_DEFAULT_SCHEMA_NAME;
+                }
               }
-              template[0].setValue(currentSchema);
               String objectName = ddl.getKeyToConflate();
               if (objectName == null) {
                 objectName = ddl.getRegionToConflate();
               }
+              template[0].setValue(sqlSchema);
               template[1].setValue(objectName);
               template[2].setValue(ddl.getValueToConflate());
               return true;
-            }
-            else {
+            } else {
               if (exportAll != null && exportAll) {
                 final AbstractGfxdReplayableMessage msg =
                     (AbstractGfxdReplayableMessage)val;
                 final String sql = msg.getSQLStatement();
                 if (sql != null) {
-                  currentSchema = msg.getSchemaName();
-                  if (currentSchema == null) {
-                    template[0].setToNull();
+                  sqlSchema = msg.getSchemaName();
+                  if (sqlSchema == null) {
+                    sqlSchema = SchemaDescriptor.STD_DEFAULT_SCHEMA_NAME;
                   }
-                  else {
-                    template[0].setValue(currentSchema);
-                  }
+                  template[0].setValue(sqlSchema);
                   template[1].setToNull();
                   template[2].setValue(sql);
                   return true;
@@ -1416,7 +1416,7 @@ public class GfxdSystemProcedures extends SystemProcedures {
       if (operation == snappydataConstants.CATALOG_GET_TABLE &&
           result.isSetCatalogTable() && region != null) {
         CatalogTableObject catalogTable = result.getCatalogTable();
-        String schema = request.getSchemaName();
+        String schema = request.getDatabaseName();
         String table = request.getNameOrPattern();
         // set other attributes: redundancy, bucket to server/replica to server mapping
         if (region.getAttributes().getPartitionAttributes() != null) {
@@ -1654,7 +1654,7 @@ public class GfxdSystemProcedures extends SystemProcedures {
                 resolvedBaseName + " having no schema");
       }
       String schema = resolvedBaseName.substring(0, dotIndex);
-      CallbackFactoryProvider.getStoreCallbacks().checkSchemaPermission(
+      CallbackFactoryProvider.getStoreCallbacks().checkDatabasePermission(
           schema, currentUser);
 
       // first create/drop locally

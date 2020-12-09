@@ -77,12 +77,15 @@ import com.pivotal.gemfirexd.internal.impl.sql.compile.ColumnDefinitionNode;
  * <li>setPosition</li>
  *</ol>
  */
-public final class ColumnDescriptor extends TupleDescriptor
+// GemStone changes BEGIN
+public final class ColumnDescriptor extends TupleDescriptor implements java.io.Serializable
 {
+	private static final long serialVersionUID = -7687054450976667166L;
+// GemStone changes END
 
 	// implementation
 	private DefaultInfo			columnDefaultInfo;
-	private TableDescriptor		table;
+	private transient TableDescriptor		table;
 	private String			columnName;
 	private int			columnPosition;
 // GemStone changes BEGIN

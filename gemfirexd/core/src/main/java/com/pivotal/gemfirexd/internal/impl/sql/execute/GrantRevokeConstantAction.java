@@ -49,7 +49,7 @@ import com.pivotal.gemfirexd.internal.iapi.sql.execute.ConstantAction;
 import java.util.List;
 
 //GemStone changes BEGIN
-class GrantRevokeConstantAction extends DDLConstantAction
+public class GrantRevokeConstantAction extends DDLConstantAction
 /*class GrantRevokeConstantAction implements ConstantAction*/
 //GemStone changes END
 {
@@ -105,5 +105,9 @@ class GrantRevokeConstantAction extends DDLConstantAction
   public boolean isCancellable() {
     return false;
   }
+
+  public boolean isGrant() {
+		return this.grant;
+	}
 // GemStone changes END
 }

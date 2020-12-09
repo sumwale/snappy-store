@@ -47,16 +47,16 @@ public interface ExternalCatalog {
    *
    * @return true if the table is column table, false if row/ref table
    */
-  boolean isColumnTable(String schema, String tableName, boolean skipLocks);
+  boolean isColumnTable(String db, String tableName, boolean skipLocks);
 
   /**
    * Get the schema for a column table in Json format (as in Spark).
    */
-  String getColumnTableSchemaAsJson(String schema, String tableName);
+  String getColumnTableSchemaAsJson(String db, String tableName);
 
   /**
    * Returns a map of DBs to list of store tables(those tables that
-   * are in store DD) in catalog. Both schema name and table names
+   * are in store DD) in catalog. Both database name and table names
    * are returned in upper-case.
    */
   Map<String, List<String>> getAllStoreTablesInCatalogUppercase();
@@ -70,18 +70,18 @@ public interface ExternalCatalog {
   /**
    * Removes a table from the external catalog if it exists.
    */
-  void removeTableIfExists(String schema, String table, boolean skipLocks);
+  void removeTableIfExists(String db, String table, boolean skipLocks);
 
   /**
    * Removes a table from the external catalog. doesn't drop policies
    * or base tables
    */
-  void removeTableUnsafeIfExists(String schema, String table, boolean forceDrop);
+  void removeTableUnsafeIfExists(String db, String table, boolean forceDrop);
 
   /**
-   * Returns the schema in which this catalog is created
+   * Returns the database in which this catalog is created
    */
-  String catalogSchemaName();
+  String catalogDatabaseName();
 
   /**
    * Get the metadata for all external hive tables (including all their columns).
@@ -96,7 +96,7 @@ public interface ExternalCatalog {
   /**
    * Returns the meta data of the Hive Table
    */
-  ExternalTableMetaData getCatalogTableMetadata(String schema, String tableName);
+  ExternalTableMetaData getCatalogTableMetadata(String db, String tableName);
 
   /**
    * Generic method to get metadata from catalog.
@@ -112,7 +112,7 @@ public interface ExternalCatalog {
 
   /**
    * Generic method to update metadata of catalog. This will also perform
-   * schema permission checks internally so callers don't need to do it.
+   * database permission checks internally so callers don't need to do it.
    *
    * @param operation one of the update operation types with prefix CATALOG_ in thrift IDL
    * @param request   parameters for <code>operation</code>

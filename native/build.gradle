@@ -85,8 +85,10 @@ if ((rootProject.name.contains('native') && !rootProject.hasProperty('skipNative
                         "boost-${boostVersion}-ubuntu14.04.tar.bz2",
                         "unixODBC-${unixodbcVersion}-ubuntu14.04.tar.bz2",
                         "googletest-${googletestVersion}-ubuntu14.04.tar.bz2" ]
-    } else if (flavour.startsWith('ubuntu16') || flavour.startsWith('ubuntu17') || flavour.startsWith('ubuntu18') ||
-        flavour.startsWith('linuxmint18') || flavour.startsWith('linuxmint19') ||
+    } else if (flavour.startsWith('ubuntu16') || flavour.startsWith('ubuntu17') || flavour.startsWith('ubuntu18') || flavour.startsWith('ubuntu20') ||
+        flavour.startsWith('linuxmint18') || flavour.startsWith('linuxmint19') || flavour.startsWith('linuxmint20') ||
+        flavour.startsWith('archlinux19') || flavour.startsWith('archlinux20') ||
+        flavour.startsWith('manjarolinux19') || flavour.startsWith('manjarolinux20') ||
         flavour.startsWith('elementary0.4') || flavour.startsWith('elementary5')) {
       boostVersion = newBoostVersion
       unixodbcVersion = newUnixodbcVersion

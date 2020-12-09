@@ -731,7 +731,7 @@ struct CatalogStats {
 // encapsulates Spark's CatalogTable and SnappyData extensions like BucketOwners, indexColumns etc
 struct CatalogTableObject {
   1: required string                                       tableName
-  2: optional string                                       schemaName
+  2: optional string                                       databaseName
   3: required string                                       tableType
   4: required CatalogStorage                               storage
   5: required string                                       tableSchema
@@ -762,7 +762,7 @@ struct CatalogTableObject {
 // encapsulates Spark's CatalogFunction
 struct CatalogFunctionObject {
   1: required string                                       functionName
-  2: optional string                                       schemaName
+  2: optional string                                       databaseName
   3: required string                                       className
   4: required list<string>                                 resources
 }
@@ -775,7 +775,7 @@ struct CatalogPartitionObject {
 }
 
 struct CatalogMetadataRequest {
-  1: optional string                                       schemaName
+  1: optional string                                       databaseName
   2: optional string                                       nameOrPattern
   3: optional map<string, string>                          properties
 }
@@ -789,7 +789,7 @@ struct CatalogMetadataDetails {
   4: optional i64                                          catalogSchemaVersion
   5: optional bool                                         exists
   6: optional list<i32>                                    otherFlags
-  7: optional CatalogSchemaObject                          catalogSchema
+  7: optional CatalogSchemaObject                          catalogDatabase
   8: optional CatalogTableObject                           catalogTable
   9: optional CatalogFunctionObject                        catalogFunction
  10: optional list<CatalogPartitionObject>                 catalogPartitions
@@ -798,9 +798,9 @@ struct CatalogMetadataDetails {
 }
 
 // different types of get operations returning CatalogMetadataDetails
-const i32 CATALOG_GET_SCHEMA                               = 1
-const i32 CATALOG_SCHEMA_EXISTS                            = 2
-const i32 CATALOG_LIST_SCHEMAS                             = 3
+const i32 CATALOG_GET_DATABASE                             = 1
+const i32 CATALOG_DATABASE_EXISTS                          = 2
+const i32 CATALOG_LIST_DATABASES                           = 3
 const i32 CATALOG_GET_TABLE                                = 4
 const i32 CATALOG_TABLE_EXISTS                             = 5
 const i32 CATALOG_LIST_TABLES                              = 6
@@ -812,8 +812,8 @@ const i32 CATALOG_LIST_PARTITION_NAMES                     = 11
 const i32 CATALOG_LIST_PARTITIONS                          = 12
 
 // different types of update operations passing CatalogMetadataDetails
-const i32 CATALOG_CREATE_SCHEMA                            = 101
-const i32 CATALOG_DROP_SCHEMA                              = 102
+const i32 CATALOG_CREATE_DATABASE                          = 101
+const i32 CATALOG_DROP_DATABASE                            = 102
 const i32 CATALOG_CREATE_TABLE                             = 103
 const i32 CATALOG_DROP_TABLE                               = 104
 const i32 CATALOG_ALTER_TABLE                              = 105

@@ -31,9 +31,9 @@ void CatalogFunctionObject::__set_functionName(const std::string& val) {
   this->functionName = val;
 }
 
-void CatalogFunctionObject::__set_schemaName(const std::string& val) {
-  this->schemaName = val;
-__isset.schemaName = true;
+void CatalogFunctionObject::__set_databaseName(const std::string& val) {
+  this->databaseName = val;
+__isset.databaseName = true;
 }
 
 void CatalogFunctionObject::__set_className(const std::string& val) {
@@ -77,8 +77,8 @@ uint32_t CatalogFunctionObject::read(::apache::thrift::protocol::TProtocol* ipro
         break;
       case 2:
         if (ftype == ::apache::thrift::protocol::T_STRING) {
-          xfer += iprot->readString(this->schemaName);
-          this->__isset.schemaName = true;
+          xfer += iprot->readString(this->databaseName);
+          this->__isset.databaseName = true;
         } else {
           xfer += iprot->skip(ftype);
         }
@@ -137,9 +137,9 @@ uint32_t CatalogFunctionObject::write(::apache::thrift::protocol::TProtocol* opr
   xfer += oprot->writeString(this->functionName);
   xfer += oprot->writeFieldEnd();
 
-  if (this->__isset.schemaName) {
-    xfer += oprot->writeFieldBegin("schemaName", ::apache::thrift::protocol::T_STRING, 2);
-    xfer += oprot->writeString(this->schemaName);
+  if (this->__isset.databaseName) {
+    xfer += oprot->writeFieldBegin("databaseName", ::apache::thrift::protocol::T_STRING, 2);
+    xfer += oprot->writeString(this->databaseName);
     xfer += oprot->writeFieldEnd();
   }
   xfer += oprot->writeFieldBegin("className", ::apache::thrift::protocol::T_STRING, 3);
@@ -166,7 +166,7 @@ uint32_t CatalogFunctionObject::write(::apache::thrift::protocol::TProtocol* opr
 void swap(CatalogFunctionObject &a, CatalogFunctionObject &b) {
   using ::std::swap;
   swap(a.functionName, b.functionName);
-  swap(a.schemaName, b.schemaName);
+  swap(a.databaseName, b.databaseName);
   swap(a.className, b.className);
   swap(a.resources, b.resources);
   swap(a.__isset, b.__isset);
@@ -174,21 +174,21 @@ void swap(CatalogFunctionObject &a, CatalogFunctionObject &b) {
 
 CatalogFunctionObject::CatalogFunctionObject(const CatalogFunctionObject& other422) {
   functionName = other422.functionName;
-  schemaName = other422.schemaName;
+  databaseName = other422.databaseName;
   className = other422.className;
   resources = other422.resources;
   __isset = other422.__isset;
 }
 CatalogFunctionObject::CatalogFunctionObject( CatalogFunctionObject&& other423) noexcept {
   functionName = std::move(other423.functionName);
-  schemaName = std::move(other423.schemaName);
+  databaseName = std::move(other423.databaseName);
   className = std::move(other423.className);
   resources = std::move(other423.resources);
   __isset = std::move(other423.__isset);
 }
 CatalogFunctionObject& CatalogFunctionObject::operator=(const CatalogFunctionObject& other424) {
   functionName = other424.functionName;
-  schemaName = other424.schemaName;
+  databaseName = other424.databaseName;
   className = other424.className;
   resources = other424.resources;
   __isset = other424.__isset;
@@ -196,7 +196,7 @@ CatalogFunctionObject& CatalogFunctionObject::operator=(const CatalogFunctionObj
 }
 CatalogFunctionObject& CatalogFunctionObject::operator=(CatalogFunctionObject&& other425) noexcept {
   functionName = std::move(other425.functionName);
-  schemaName = std::move(other425.schemaName);
+  databaseName = std::move(other425.databaseName);
   className = std::move(other425.className);
   resources = std::move(other425.resources);
   __isset = std::move(other425.__isset);
@@ -206,7 +206,7 @@ void CatalogFunctionObject::printTo(std::ostream& out) const {
   using ::apache::thrift::to_string;
   out << "CatalogFunctionObject(";
   out << "functionName=" << to_string(functionName);
-  out << ", " << "schemaName="; (__isset.schemaName ? (out << to_string(schemaName)) : (out << "<null>"));
+  out << ", " << "databaseName="; (__isset.databaseName ? (out << to_string(databaseName)) : (out << "<null>"));
   out << ", " << "className=" << to_string(className);
   out << ", " << "resources=" << to_string(resources);
   out << ")";

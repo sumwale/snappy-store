@@ -22,7 +22,6 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.regex.Pattern;
 
 import com.gemstone.gemfire.DataSerializer;
 import com.gemstone.gemfire.distributed.internal.DistributionManager;
@@ -85,10 +84,6 @@ public final class DDLConflatable extends GfxdDataSerializable implements
 
   private static final byte PEEK_SKIP = 0x2;
 
-  private static final Pattern isCreateSchemaPattern = Pattern
-      .compile("^\\s*CREATE\\s+SCHEMA\\s+.*$", Pattern.CASE_INSENSITIVE
-          | Pattern.DOTALL);
-
   private boolean isDropStatement;
 
   private String fullTableName;
@@ -135,6 +130,22 @@ public final class DDLConflatable extends GfxdDataSerializable implements
   private static final int F_METASTORE_IN_DD = 0x20;
   /** true if ddl is a create disk store statement */
   private static final int F_IS_CREATE_DISKSTORE = 0x40;
+  /** true if ddl is a drop disk store statement */
+  private static final int F_IS_DROP_DISKSTORE = 0x80;
+  /** true if ddl is a create schema statement */
+  private static final int F_IS_CREATE_SCHEMA = 0x100;
+  /** true if ddl is a drop schema statement */
+  private static final int F_IS_DROP_SCHEMA = 0x200;
+  /** true if ddl is a grant statement */
+  private static final int F_IS_GRANT = 0x400;
+  /** true if ddl is a revoke statement */
+  private static final int F_IS_REVOKE = 0x800;
+  /** true if ddl is a drop index statement */
+  private static final int F_IS_DROP_INDEX = 0x1000;
+  /** true if ddl is a create trigger statement */
+  private static final int F_IS_CREATE_TRIGGER = 0x2000;
+  /** true if ddl is a drop trigger statement */
+  private static final int F_IS_DROP_TRIGGER = 0x4000;
 
   private String constraintName; 
   private Set<String> droppedFKConstraints = null;
@@ -155,8 +166,13 @@ public final class DDLConflatable extends GfxdDataSerializable implements
     if (constantAction instanceof CreateDiskStoreConstantAction) {
       this.additionalFlags = GemFireXDUtils.set(this.additionalFlags,
           F_IS_CREATE_DISKSTORE);
-    }
-    if (constantAction instanceof CreateTableConstantAction) {
+    } else if (constantAction instanceof DropDiskStoreConstantAction) {
+      this.additionalFlags = GemFireXDUtils.set(this.additionalFlags, F_IS_DROP_DISKSTORE);
+    } else if (constantAction instanceof CreateSchemaConstantAction) {
+      this.additionalFlags = GemFireXDUtils.set(this.additionalFlags, F_IS_CREATE_SCHEMA);
+    } else if (constantAction instanceof DropSchemaConstantAction) {
+      this.additionalFlags = GemFireXDUtils.set(this.additionalFlags, F_IS_DROP_SCHEMA);
+    } else if (constantAction instanceof CreateTableConstantAction) {
       this.flags = GemFireXDUtils.set(this.flags, IS_CREATE_TABLE);
       this.colocatedWithTable = ((CreateTableConstantAction)constantAction)
           .getColocatedWithTable();
@@ -166,7 +182,16 @@ public final class DDLConflatable extends GfxdDataSerializable implements
       }
     } else if (constantAction instanceof DropTableConstantAction) {
       this.flags = GemFireXDUtils.set(this.flags, IS_DROP_TABLE);
+    } else if (constantAction instanceof GrantRevokeConstantAction) {
+      boolean isGrant = ((GrantRevokeConstantAction)constantAction).isGrant();
+      this.additionalFlags = GemFireXDUtils.set(this.additionalFlags,
+          isGrant ? F_IS_GRANT : F_IS_REVOKE);
+    } else if (constantAction instanceof CreateTriggerConstantAction) {
+      this.additionalFlags = GemFireXDUtils.set(this.additionalFlags, F_IS_CREATE_TRIGGER);
+    } else if (constantAction instanceof DropTriggerConstantAction) {
+      this.additionalFlags = GemFireXDUtils.set(this.additionalFlags, F_IS_DROP_TRIGGER);
     }
+
     if (implicitSchema != null) {
       this.implicitSchema = implicitSchema;
       this.additionalFlags = GemFireXDUtils.set(this.additionalFlags,
@@ -187,7 +212,6 @@ public final class DDLConflatable extends GfxdDataSerializable implements
       if (constraintConstantActions != null) {
         for (int i = 0; i < constraintConstantActions.length; i++) {
           ConstraintConstantAction c = constraintConstantActions[i];
-          
           if (c instanceof DropConstraintConstantAction && 
               ((DropConstraintConstantAction)c).isForeignKeyConstraint()) {
             this.additionalFlags = GemFireXDUtils.set(this.additionalFlags,
@@ -204,9 +228,10 @@ public final class DDLConflatable extends GfxdDataSerializable implements
           }
         }
       }
-    }
-    else if (constantAction instanceof CreateIndexConstantAction) {
+    } else if (constantAction instanceof CreateIndexConstantAction) {
       this.flags = GemFireXDUtils.set(this.flags, IS_CREATE_INDEX);
+    } else if (constantAction instanceof DropIndexConstantAction) {
+      this.additionalFlags = GemFireXDUtils.set(this.additionalFlags, F_IS_DROP_INDEX);
     }
     String schemaName = constantAction.getSchemaName();
     this.tableName = constantAction.getTableName();
@@ -235,7 +260,7 @@ public final class DDLConflatable extends GfxdDataSerializable implements
         }
       }
     }
-    
+
     if (this.sqlText == null) {
       this.sqlText = sqlText;
     }
@@ -276,7 +301,7 @@ public final class DDLConflatable extends GfxdDataSerializable implements
         + "a non-null schema/table name when conflation is requested";
     // assert !(preprocess() && postprocess());
   }
-  
+
   /**
    * Returns if the DDL command is to be persisted on HDFS. 
    * @param ddlAction
@@ -302,11 +327,11 @@ public final class DDLConflatable extends GfxdDataSerializable implements
     }
     return false;
   }
-  
+
   public boolean isHDFSPersistent() {
     return isHDFSPersistent;
   }
-  
+
   public String getTableName() {
     return this.tableName;
   }
@@ -336,12 +361,12 @@ public final class DDLConflatable extends GfxdDataSerializable implements
   public final boolean isAlterTable() {
     return GemFireXDUtils.isSet(this.flags, IS_ALTER_TABLE);
   }
-  
+
   public final boolean isAlterTableDropFKConstraint() {
     return GemFireXDUtils.isSet(this.additionalFlags, 
         F_IS_DROP_FK_CONSTRAINT);
   }
-  
+
   public final boolean isAlterTableAddFKConstraint() {
     return GemFireXDUtils.isSet(this.additionalFlags, 
         F_IS_ADD_FK_CONSTRAINT);
@@ -360,9 +385,16 @@ public final class DDLConflatable extends GfxdDataSerializable implements
     return GemFireXDUtils.isSet(this.flags, IS_CREATE_INDEX);
   }
 
+  public final boolean isDropIndex() {
+    return GemFireXDUtils.isSet(this.additionalFlags, F_IS_DROP_INDEX);
+  }
+
   public final boolean isCreateDiskStore() {
-    return GemFireXDUtils.isSet(this.additionalFlags,
-        F_IS_CREATE_DISKSTORE);
+    return GemFireXDUtils.isSet(this.additionalFlags, F_IS_CREATE_DISKSTORE);
+  }
+
+  public final boolean isDropDiskStore() {
+    return GemFireXDUtils.isSet(this.additionalFlags, F_IS_DROP_DISKSTORE);
   }
 
   public boolean shouldBeConflated() {
@@ -422,6 +454,11 @@ public final class DDLConflatable extends GfxdDataSerializable implements
     return this.sqlText;
   }
 
+  @Override
+  public String getSQLStatement() {
+    return this.sqlText;
+  }
+
   public Object getAdditionalArgs() {
     return this.additionalArgs;
   }
@@ -440,17 +477,16 @@ public final class DDLConflatable extends GfxdDataSerializable implements
     }
     return this.defaultSchema;
   }
-  
+
   /**
    * returns the schema for a table 
-   * 
    */
   public String getSchemaForTable() {
     assert isCreateTable() || isAlterTable();
-    return getSchemaForTable_internal();
+    return getSchemaForTableNoThrow();
   }
 
-  private String getSchemaForTable_internal() {
+  public String getSchemaForTableNoThrow() {
     if (this.fullTableName != null) {
       final int dotIndex = this.fullTableName.indexOf('.');
       if (dotIndex == -1) {
@@ -459,10 +495,6 @@ public final class DDLConflatable extends GfxdDataSerializable implements
       return this.fullTableName.substring(0, dotIndex);
     }
     return null;
-  }
-
-  public String getSchemaForTableNoThrow() {
-    return getSchemaForTable_internal();
   }
 
   public final String getColocatedWithTable() {
@@ -490,7 +522,7 @@ public final class DDLConflatable extends GfxdDataSerializable implements
     throw new AssertionError("DDLConflatable#getEventId: "
         + "not expected to be invoked");
   }
-  
+
   public String getConstraintName() {
     return this.constraintName;
   }
@@ -498,7 +530,7 @@ public final class DDLConflatable extends GfxdDataSerializable implements
   public short getDDLVersion() {
     return ddlVersion;
   }
-  
+
   /**
    * Mark this DDL has having started the process of execution in DDL replay
    * (essentially when it has been removed from the DDL queue locally). Requires
@@ -529,8 +561,28 @@ public final class DDLConflatable extends GfxdDataSerializable implements
     return GemFireXDUtils.isSet(this.flags, HAS_AUTHID);
   }
 
-  public boolean isCreateSchemaText() {
-    return isCreateSchemaPattern.matcher(this.sqlText).find();
+  public boolean isCreateSchema() {
+    return GemFireXDUtils.isSet(this.additionalFlags, F_IS_CREATE_SCHEMA);
+  }
+
+  public boolean isDropSchema() {
+    return GemFireXDUtils.isSet(this.additionalFlags, F_IS_DROP_SCHEMA);
+  }
+
+  public boolean isGrantStatement() {
+    return GemFireXDUtils.isSet(this.additionalFlags, F_IS_GRANT);
+  }
+
+  public boolean isRevokeStatement() {
+    return GemFireXDUtils.isSet(this.additionalFlags, F_IS_REVOKE);
+  }
+
+  public boolean isCreateTrigger() {
+    return GemFireXDUtils.isSet(this.additionalFlags, F_IS_CREATE_TRIGGER);
+  }
+
+  public boolean isDropTrigger() {
+    return GemFireXDUtils.isSet(this.additionalFlags, F_IS_DROP_TRIGGER);
   }
 
   /**
@@ -538,12 +590,11 @@ public final class DDLConflatable extends GfxdDataSerializable implements
    */
   @Override
   public boolean preprocess() {
-    // only "CREATE SCHEMA" is pre-processed
-    return isCreateSchemaText();
+    // only "CREATE/DROP SCHEMA" are pre-processed
+    return isCreateSchema() || isDropSchema();
   }
 
   public boolean postprocess() {
-    // only "CREATE SCHEMA" is pre-processed
     return false;
   }
 
@@ -575,14 +626,14 @@ public final class DDLConflatable extends GfxdDataSerializable implements
       return false;
     }
   }
-  
+
   public void addToDroppedFKConstraints(String fk) {
     if (this.droppedFKConstraints == null) {
       this.droppedFKConstraints = new HashSet<String>();
     }
     this.droppedFKConstraints.add(fk);
   }
-  
+
   public Set<String> getDroppedFKConstraints() {
     return this.droppedFKConstraints;
   }
@@ -642,7 +693,7 @@ public final class DDLConflatable extends GfxdDataSerializable implements
   public byte getGfxdID() {
     return GfxdSerializable.DDL_CONFLATABLE;
   }
-  
+
   public Version[] getSerializationVersions() {
     return serializationVersions;
   }

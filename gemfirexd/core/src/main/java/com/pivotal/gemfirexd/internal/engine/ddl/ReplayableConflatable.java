@@ -18,11 +18,12 @@
 package com.pivotal.gemfirexd.internal.engine.ddl;
 
 import com.gemstone.gemfire.internal.cache.Conflatable;
+import com.pivotal.gemfirexd.internal.iapi.error.StandardException;
 
 /**
  * Interface for {@link Conflatable}s that can be replayed by GemFireXD DDL replay
  * in bootup.
- * 
+ *
  * @author swale
  * @since gfxd 1.0
  */
@@ -32,16 +33,23 @@ public interface ReplayableConflatable extends Conflatable {
    * If this returns true then local execution for this object should be skipped
    * since it has already been considered at least once.
    */
-  public boolean skipInLocalExecution();
+  boolean skipInLocalExecution();
 
   /**
    * Mark this Conflatable as executing
    */
-  public void markExecuting();
+  void markExecuting();
 
   /**
    * Returns true if this object is currently being executed, or has finished
    * execution (and hence is not a valid candidate for conflation).
    */
-  public boolean isExecuting();
+  boolean isExecuting();
+
+  /**
+   * Get the equivalent SQL statement for this message.
+   *
+   * @return the equivalent SQL statement for this message
+   */
+  String getSQLStatement();
 }

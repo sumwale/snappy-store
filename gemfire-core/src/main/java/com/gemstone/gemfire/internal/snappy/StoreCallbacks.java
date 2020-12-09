@@ -42,7 +42,7 @@ public interface StoreCallbacks {
 
   void invokeColumnStorePutCallbacks(BucketRegion bucket, EntryEventImpl[] events);
 
-  List<String> getInternalTableSchemas();
+  List<String> getInternalTableDatabases();
 
   boolean isColumnTable(String qualifiedName);
 
@@ -147,9 +147,9 @@ public interface StoreCallbacks {
   void refreshPolicies(String ldapGroup);
 
   /**
-   * Check permission for current user on given schema.
+   * Check permission for current user on given database.
    */
-  String checkSchemaPermission(String schema, String currentUser);
+  String checkDatabasePermission(String db, String currentUser);
 
   /**
    * Removes the sampler from global map for the given sample table.

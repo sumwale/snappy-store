@@ -88,7 +88,7 @@ public final class CustomRowsResultSet extends DVDStoreResultSet {
      * If next row is available then fill in template and return true, else
      * return false.
      */
-    public boolean getNext(DataValueDescriptor[] template) throws SQLException,
+    boolean getNext(DataValueDescriptor[] template) throws SQLException,
         StandardException;
 
     default void close() throws SQLException {

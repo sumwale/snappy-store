@@ -41,8 +41,8 @@
 namespace io { namespace snappydata { namespace thrift {
 
 typedef struct _CatalogMetadataRequest__isset {
-  _CatalogMetadataRequest__isset() : schemaName(false), nameOrPattern(false), properties(false) {}
-  bool schemaName :1;
+  _CatalogMetadataRequest__isset() : databaseName(false), nameOrPattern(false), properties(false) {}
+  bool databaseName :1;
   bool nameOrPattern :1;
   bool properties :1;
 } _CatalogMetadataRequest__isset;
@@ -54,17 +54,17 @@ class CatalogMetadataRequest {
   CatalogMetadataRequest(CatalogMetadataRequest&&) noexcept;
   CatalogMetadataRequest& operator=(const CatalogMetadataRequest&);
   CatalogMetadataRequest& operator=(CatalogMetadataRequest&&) noexcept;
-  CatalogMetadataRequest() : schemaName(), nameOrPattern() {
+  CatalogMetadataRequest() : databaseName(), nameOrPattern() {
   }
 
   virtual ~CatalogMetadataRequest() noexcept;
-  std::string schemaName;
+  std::string databaseName;
   std::string nameOrPattern;
   std::map<std::string, std::string>  properties;
 
   _CatalogMetadataRequest__isset __isset;
 
-  void __set_schemaName(const std::string& val);
+  void __set_databaseName(const std::string& val);
 
   void __set_nameOrPattern(const std::string& val);
 
@@ -72,9 +72,9 @@ class CatalogMetadataRequest {
 
   bool operator == (const CatalogMetadataRequest & rhs) const
   {
-    if (__isset.schemaName != rhs.__isset.schemaName)
+    if (__isset.databaseName != rhs.__isset.databaseName)
       return false;
-    else if (__isset.schemaName && !(schemaName == rhs.schemaName))
+    else if (__isset.databaseName && !(databaseName == rhs.databaseName))
       return false;
     if (__isset.nameOrPattern != rhs.__isset.nameOrPattern)
       return false;
