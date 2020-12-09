@@ -130,6 +130,9 @@ public final class DDLConflatable extends GfxdDataSerializable implements
   private static final int F_METASTORE_IN_DD = 0x20;
   /** true if ddl is a create disk store statement */
   private static final int F_IS_CREATE_DISKSTORE = 0x40;
+  // TODO: SW: additional flags from here down are unavailable for older
+  // persisted data, so those should rely on simple regex parsing
+  // (RecoveryService will do an exact parse in any case)
   /** true if ddl is a drop disk store statement */
   private static final int F_IS_DROP_DISKSTORE = 0x80;
   /** true if ddl is a create schema statement */
