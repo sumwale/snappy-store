@@ -303,7 +303,7 @@ public class GemFireCacheImpl implements InternalCache, ClientCache, HasCachePer
 
   // This is a HashMap because I know that clear() on it does
   // not allocate objects.
-  private final HashMap rootRegions;
+  private final ConcurrentMap<String, LocalRegion> rootRegions;
 
   /**
    * True if this cache is being created by a ClientCacheFactory.
@@ -1354,7 +1354,7 @@ public class GemFireCacheImpl implements InternalCache, ClientCache, HasCachePer
         }
       }
 
-      this.rootRegions = new HashMap();
+      this.rootRegions = new ConcurrentHashMap<>();
 
       initReliableMessageQueueFactory();
 
@@ -2723,11 +2723,7 @@ public class GemFireCacheImpl implements InternalCache, ClientCache, HasCachePer
             GemFireCacheImpl.pdxInstance = null;
           }
 
-          List rootRegionValues = null;
-          synchronized (this.rootRegions) {
-            rootRegionValues = new ArrayList(this.rootRegions.values());
-          }
-          {
+
             final Operation op;
             if (this.forcedDisconnect) {
               op = Operation.FORCED_DISCONNECT;
@@ -2738,7 +2734,8 @@ public class GemFireCacheImpl implements InternalCache, ClientCache, HasCachePer
             }
 
             LocalRegion prRoot = null;
-            
+
+            List rootRegionValues = new ArrayList(this.rootRegions.values());
             for (Iterator itr = rootRegionValues.iterator(); itr.hasNext();) {
               LocalRegion lr = (LocalRegion) itr.next();
               this.getLogger().fine(this.toString() + ": processing region " + lr.getFullPath());
@@ -2774,7 +2771,6 @@ public class GemFireCacheImpl implements InternalCache, ClientCache, HasCachePer
             this.cachedPRRoot = null;
 
             destroyPartitionedRegionLockService();
-          }
 
           closeDiskStores();
           
@@ -3777,12 +3773,7 @@ public class GemFireCacheImpl implements InternalCache, ClientCache, HasCachePer
           } finally {
             // clean up if initialize fails for any reason
             setRegionByPath(rgn.getFullPath(), null);
-            synchronized (this.rootRegions) {
-              Region r = (Region) this.rootRegions.get(name);
-              if (r == rgn) {
-                this.rootRegions.remove(name);
-              }
-            } // synchronized
+            rootRegions.remove(name,rgn);
           }
         } // success
       }
@@ -3866,7 +3857,6 @@ public class GemFireCacheImpl implements InternalCache, ClientCache, HasCachePer
    */
   public final Set<LocalRegion> getAllRegions() {
     Set<LocalRegion> result = new HashSet();
-    synchronized (this.rootRegions) {
       for (Object r : this.rootRegions.values()) {
         if (r instanceof PartitionedRegion) {
           PartitionedRegion p = (PartitionedRegion) r;
@@ -3883,13 +3873,11 @@ public class GemFireCacheImpl implements InternalCache, ClientCache, HasCachePer
           result.addAll(l.basicSubregions(true));
         }
       }
-    }
     return result;
   }
 
   public final Set<LocalRegion> getApplicationRegions() {
     UnifiedSet<LocalRegion> result = new UnifiedSet<>();
-    synchronized (this.rootRegions) {
       for (Object r : this.rootRegions.values()) {
         LocalRegion rgn = (LocalRegion) r;
         if (rgn.isInternalRegion() || (rgn instanceof HARegion)) {
@@ -3898,7 +3886,6 @@ public class GemFireCacheImpl implements InternalCache, ClientCache, HasCachePer
         result.add(rgn);
         result.addAll(rgn.basicSubregions(true));
       }
-    }
     return result;
   }
 
@@ -3946,12 +3933,9 @@ public class GemFireCacheImpl implements InternalCache, ClientCache, HasCachePer
       // latches
       try {
         String[] pathParts = parsePath(path);
-        LocalRegion root;
-        synchronized (this.rootRegions) {
-          root = (LocalRegion) this.rootRegions.get(pathParts[0]);
+        LocalRegion root = (LocalRegion) this.rootRegions.get(pathParts[0]);
           if (root == null)
             return null;
-        }
         LogWriterI18n logger = getLoggerI18n();
         if (logger.fineEnabled()) {
           logger.fine("GemFireCache.getRegion, calling getSubregion on root(" + pathParts[0] + "): " + pathParts[1]);
@@ -4007,10 +3991,8 @@ public class GemFireCacheImpl implements InternalCache, ClientCache, HasCachePer
     }
 
     String[] pathParts = parsePath(path);
-    LocalRegion root;
     LogWriterI18n logger = getLoggerI18n();
-    synchronized (this.rootRegions) {
-      root = (LocalRegion) this.rootRegions.get(pathParts[0]);
+    LocalRegion root = (LocalRegion) this.rootRegions.get(pathParts[0]);
       if (root == null) {
         if (logger.fineEnabled()) {
           logger.fine("GemFireCache.getRegion, no region found for " + pathParts[0]);
@@ -4022,7 +4004,7 @@ public class GemFireCacheImpl implements InternalCache, ClientCache, HasCachePer
         stopper.checkCancelInProgress(null);
         return null;
       }
-    }
+
     if (logger.fineEnabled()) {
       logger.fine("GemFireCache.getRegion, calling getSubregion on root(" + pathParts[0] + "): " + pathParts[1]);
     }
@@ -4056,10 +4038,8 @@ public class GemFireCacheImpl implements InternalCache, ClientCache, HasCachePer
     }
  
     String[] pathParts = parsePath(path);
-    LocalRegion root;
     LogWriterI18n logger = getLoggerI18n();
-    synchronized (this.rootRegions) {
-      root = (LocalRegion) this.rootRegions.get(pathParts[0]);
+    LocalRegion root = (LocalRegion) this.rootRegions.get(pathParts[0]);
       if (root == null) {
         if (logger.fineEnabled()) {
           logger.fine("GemFireCache.getRegion, no region found for " + pathParts[0]);
@@ -4071,7 +4051,6 @@ public class GemFireCacheImpl implements InternalCache, ClientCache, HasCachePer
         stopper.checkCancelInProgress(null);
         return null;
       }
-    }
     if (logger.fineEnabled()) {
       logger.fine("GemFireCache.getPartitionedRegion, calling getSubregion on root(" + pathParts[0] + "): " + pathParts[1]);
     }
@@ -4119,7 +4098,6 @@ public class GemFireCacheImpl implements InternalCache, ClientCache, HasCachePer
   private final Set rootRegions(boolean includePRAdminRegions, boolean waitForInit) {
     stopper.checkCancelInProgress(null);
     Set regions = new HashSet();
-    synchronized (this.rootRegions) {
       for (Iterator itr = this.rootRegions.values().iterator(); itr.hasNext();) {
         LocalRegion r = (LocalRegion) itr.next();
         // If this is an internal meta-region, don't return it to end user
@@ -4129,7 +4107,7 @@ public class GemFireCacheImpl implements InternalCache, ClientCache, HasCachePer
         }
         regions.add(r);
       }
-    }
+
     if (waitForInit) {
       for (Iterator r = regions.iterator(); r.hasNext();) {
         LocalRegion lr = (LocalRegion) r.next();
@@ -4340,16 +4318,8 @@ public class GemFireCacheImpl implements InternalCache, ClientCache, HasCachePer
    * @return true if root region was removed, false if not found
    */
   boolean removeRoot(LocalRegion rootRgn) {
-    synchronized (this.rootRegions) {
       String rgnName = rootRgn.getName();
-      LocalRegion found = (LocalRegion) this.rootRegions.get(rgnName);
-      if (found == rootRgn) {
-        LocalRegion previous = (LocalRegion) this.rootRegions.remove(rgnName);
-        Assert.assertTrue(previous == rootRgn);
-        return true;
-      } else
-        return false;
-    }
+      return this.rootRegions.remove(rgnName,rootRgn);
   }
 
   /**
@@ -4527,8 +4497,7 @@ public class GemFireCacheImpl implements InternalCache, ClientCache, HasCachePer
       // getLogger().fine("Added gateway hub (now there are "
       // + allGatewayHubs.length + ") :" + hub);
     } // synchronized
-    
-    synchronized (this.rootRegions) {
+
       Set<LocalRegion> appRegions = getApplicationRegions();
       for (LocalRegion r : appRegions) {
         RegionAttributes ra = r.getAttributes();
@@ -4541,7 +4510,6 @@ public class GemFireCacheImpl implements InternalCache, ClientCache, HasCachePer
           r.hubCreated(GatewayHubImpl.NON_GFXD_HUB);
         }
       }
-    }
     
     return hub;
   }
@@ -4573,7 +4541,6 @@ public class GemFireCacheImpl implements InternalCache, ClientCache, HasCachePer
       }
     }
 
-    synchronized (this.rootRegions) {
       Set<LocalRegion> appRegions = getApplicationRegions();
       for (LocalRegion r : appRegions) {
         Set<String> senders = r.getAllGatewaySenderIds();
@@ -4584,7 +4551,6 @@ public class GemFireCacheImpl implements InternalCache, ClientCache, HasCachePer
           r.gatewaySendersChanged();
         }
       }
-    }
 
      if(!sender.isParallel()) {
        Region dynamicMetaRegion = getRegion(DynamicRegionFactory.dynamicRegionListName);
@@ -4623,7 +4589,6 @@ public class GemFireCacheImpl implements InternalCache, ClientCache, HasCachePer
       }
     }
 
-    synchronized (this.rootRegions) {
       Set<LocalRegion> appRegions = getApplicationRegions();
       for (LocalRegion r : appRegions) {
         Set<String> senders = r.getAllGatewaySenderIds();
@@ -4634,7 +4599,6 @@ public class GemFireCacheImpl implements InternalCache, ClientCache, HasCachePer
           r.gatewaySendersChanged();
         }
       }
-    }
   }
 
   public void addGatewayReceiver(GatewayReceiver recv) {
@@ -4705,7 +4669,6 @@ public class GemFireCacheImpl implements InternalCache, ClientCache, HasCachePer
   }
 
   public void gatewaySenderStarted(GatewaySender sender) {
-    synchronized (this.rootRegions) {
       Set<LocalRegion> appRegions = getApplicationRegions();
       for (LocalRegion r : appRegions) {
         Set<String> senders = r.getAllGatewaySenderIds();
@@ -4713,11 +4676,9 @@ public class GemFireCacheImpl implements InternalCache, ClientCache, HasCachePer
           r.senderStarted();
         }
       }
-    }
   }
 
   public void gatewaySenderStopped(GatewaySender sender) {
-    synchronized (this.rootRegions) {
       Set<LocalRegion> appRegions = getApplicationRegions();
       for (LocalRegion r : appRegions) {
         Set<String> senders = r.getAllGatewaySenderIds();
@@ -4725,7 +4686,6 @@ public class GemFireCacheImpl implements InternalCache, ClientCache, HasCachePer
           r.senderStopped();
         }
       }
-    }
   }
 
   public final Set<GatewayReceiver> getGatewayReceivers() {
