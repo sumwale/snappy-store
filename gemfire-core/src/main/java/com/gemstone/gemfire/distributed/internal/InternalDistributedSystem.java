@@ -28,6 +28,9 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 import com.gemstone.gemfire.*;
 import com.gemstone.gemfire.admin.AlertLevel;
@@ -1879,10 +1882,9 @@ public final class InternalDistributedSystem
     return sb.toString().trim();
   }
 
-  private final ArrayList<Statistics> statsList = new ArrayList<Statistics>();
+  private final List<Statistics> statsList = new CopyOnWriteArrayList<Statistics>();
   private int statsListModCount = 0;
-  private long statsListUniqueId = 1;
-  private final Object statsListUniqueIdLock = new Object();
+  private AtomicLong statsListUniqueId = new AtomicLong(1);
 
   // As the function execution stats can be lot in number, its better to put
   // them in a map so that it will be accessible immediately
@@ -1898,46 +1900,32 @@ public final class InternalDistributedSystem
 
   @Override
   public final int getStatisticsCount() {
-    int result = 0;
-    List<Statistics> statsList = this.statsList;
-    if (statsList != null) {
-      result = statsList.size();
-    }
-    return result;
+    return getStatsList().size();
   }
 
   @Override
   public final Statistics findStatistics(long id) {
-    List<Statistics> statsList = this.statsList;
-    synchronized (statsList) {
-      for (Statistics s : statsList) {
-        if (s.getUniqueId() == id) {
-          return s;
-        }
-      }
-    }
-    throw new RuntimeException(LocalizedStrings.PureStatSampler_COULD_NOT_FIND_STATISTICS_INSTANCE.toLocalizedString());
+    return anyStatisticsInstance(s->s.getUniqueId() == id)
+            .orElseThrow(() ->
+                new RuntimeException(LocalizedStrings.PureStatSampler_COULD_NOT_FIND_STATISTICS_INSTANCE.toLocalizedString()) );
   }
 
   @Override
   public final boolean statisticsExists(long id) {
-    List<Statistics> statsList = this.statsList;
-    synchronized (statsList) {
-      for (Statistics s : statsList) {
-        if (s.getUniqueId() == id) {
-          return true;
-        }
-      }
-    }
-    return false;
+    return anyStatisticsInstance(s->s.getUniqueId() == id)
+            .isPresent();
   }
 
   @Override
   public final Statistics[] getStatistics() {
-    List<Statistics> statsList = this.statsList;
-    synchronized (statsList) {
-      return statsList.toArray(new Statistics[statsList.size()]);
-    }
+    return getStatsList().toArray(new Statistics[0]);
+  }
+  private Stream<Statistics> allStatisticsInstances(Predicate<? super Statistics> predicate) {
+    return getStatsList().stream().filter(predicate);
+  }
+
+  private Optional<Statistics> anyStatisticsInstance(Predicate<? super Statistics> predicate) {
+    return allStatisticsInstances(predicate).findAny();
   }
 
   // StatisticsFactory methods
@@ -1954,15 +1942,9 @@ public final class InternalDistributedSystem
     if (this.statsDisabled) {
       return new DummyStatisticsImpl(type, textId, numericId);
     }
-    long myUniqueId;
-    synchronized (statsListUniqueIdLock) {
-      myUniqueId = statsListUniqueId++; // fix for bug 30597
-    }
+    long myUniqueId = statsListUniqueId.getAndIncrement();
     Statistics result = new LocalStatisticsImpl(type, textId, numericId, myUniqueId, false, osStatFlags, this);
-    synchronized (statsList) {
-      statsList.add(result);
-      statsListModCount++;
-    }
+    registerNewStatistics(result);
     return result;
   }
 
@@ -1997,11 +1979,9 @@ public final class InternalDistributedSystem
    * This method was added to fix bug 40358
    */
   public void visitStatistics(StatisticsVisitor visitor) {
-    synchronized (this.statsList) {
       for (Statistics s: this.statsList) {
         visitor.visit(s);
       }
-    }
   }
 
   /**
@@ -2018,51 +1998,28 @@ public final class InternalDistributedSystem
 
 
   public Statistics[] findStatisticsByType(final StatisticsType type) {
-    final ArrayList hits = new ArrayList();
-    visitStatistics(new StatisticsVisitor() {
-        public void visit(Statistics s) {
-          if (type == s.getType()) {
-            hits.add(s);
-          }
-        }
-      });
-    Statistics[] result = new Statistics[hits.size()];
-    return (Statistics[])hits.toArray(result);
+    return allStatisticsInstances(s->type==s.getType())
+            .toArray(Statistics[]::new);
   }
 
   public Statistics[] findStatisticsByTextId(final String textId) {
-    final ArrayList hits = new ArrayList();
-    visitStatistics(new StatisticsVisitor() {
-        public void visit(Statistics s) {
-          if (s.getTextId().equals(textId)) {
-            hits.add(s);
-          }
-        }
-      });
-    Statistics[] result = new Statistics[hits.size()];
-    return (Statistics[])hits.toArray(result);
+    return allStatisticsInstances(s->s.getTextId().equals(textId))
+            .toArray(Statistics[]::new);
   }
   public Statistics[] findStatisticsByNumericId(final long numericId) {
-    final ArrayList hits = new ArrayList();
-    visitStatistics(new StatisticsVisitor() {
-        public void visit(Statistics s) {
-          if (numericId == s.getNumericId()) {
-            hits.add(s);
-          }
-        }
-      });
-    Statistics[] result = new Statistics[hits.size()];
-    return (Statistics[])hits.toArray(result);
+    return allStatisticsInstances(s->numericId == s.getNumericId())
+            .toArray(Statistics[]::new);
   }
   public Statistics findStatisticsByUniqueId(final long uniqueId) {
-    synchronized (this.statsList) {
-      for (Statistics s: this.statsList) {
-        if (uniqueId == s.getUniqueId()) {
-          return s;
-        }
-      }
+    return anyStatisticsInstance(s->uniqueId == s.getUniqueId())
+            .orElse(null);
+  }
+
+  private void registerNewStatistics(Statistics newStatistics) {
+    synchronized (statsList) {
+      statsList.add(newStatistics);
+      statsListModCount++;
     }
-    return null;
   }
 
   /** for internal use only. Its called by {@link LocalStatisticsImpl#close}. */
@@ -2083,29 +2040,18 @@ public final class InternalDistributedSystem
 
   public Statistics createAtomicStatistics(StatisticsType type, String textId,
       long numericId) {
-    return createAtomicStatistics(type, textId, numericId, 0);
+    return createAtomicStatistics(type,textId,numericId,0);
   }
 
-  public Statistics createAtomicStatistics(StatisticsType type, String textId,
-      long numericId, long uniqueId) {
+  @Override
+  public Statistics createAtomicStatistics(StatisticsType type, String textId, long numericId, long uniqueId) {
     if (this.statsDisabled) {
       return new DummyStatisticsImpl(type, textId, numericId);
     }
 
-    long myUniqueId;
-    if (uniqueId == 0) {
-      synchronized (statsListUniqueIdLock) {
-        myUniqueId = statsListUniqueId++; // fix for bug 30597
-      }
-    }
-    else {
-      myUniqueId = uniqueId;
-    }
+    Long myUniqueId = uniqueId>0?uniqueId : statsListUniqueId.getAndIncrement();
     Statistics result = StatisticsImpl.createAtomicNoOS(type, textId, numericId, myUniqueId, this);
-    synchronized (statsList) {
-      statsList.add(result);
-      statsListModCount++;
-    }
+    registerNewStatistics(result);
     return result;
   }
 
