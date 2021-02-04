@@ -895,6 +895,16 @@ public class GemFireCacheImpl implements InternalCache, ClientCache, HasCachePer
                       " is " + regionEntryMap.size());
             }
 
+            //Only load TXState once for each region-snapshot
+            Collection<TXStateProxy> txProxies = getTxManager().getHostedTransactionsInProgress();
+            List<TXState> runningTXs=new ArrayList<>();
+            for (TXStateProxy txProxy : txProxies) {
+              TXState txState = txProxy.getLocalTXState();
+              if (txState != null && !txState.isClosed() && txState.isSnapshot()) {
+                runningTXs.add(txState);
+              }
+            }
+
             for (Entry<Object, Object> oldEntry : regionEntryMap.entrySet()) {
               Object oldEntries = oldEntry.getValue();
 
@@ -904,7 +914,7 @@ public class GemFireCacheImpl implements InternalCache, ClientCache, HasCachePer
                   if (re.isUpdateInProgress()) {
                     continue;
                   } else {
-                    if (notRequired(region, re, null)) {
+                    if (notRequired(region, re, null,runningTXs)) {
                       removeEntry(regionEntryMap, re, region);
                     }
                   }
@@ -916,7 +926,7 @@ public class GemFireCacheImpl implements InternalCache, ClientCache, HasCachePer
                     if (re.isUpdateInProgress()) {
                       continue;
                     } else {
-                      if (notRequired(region, re, oldEntriesQueue)) {
+                      if (notRequired(region, re, oldEntriesQueue,runningTXs)) {
                         if (SNAPSHOT_DEBUG || getLoggerI18n().fineEnabled()) {
                           getLoggerI18n().info(LocalizedStrings.DEBUG,
                                   "OldEntriesCleanerThread : Removing the entry " + re);
@@ -993,12 +1003,13 @@ public class GemFireCacheImpl implements InternalCache, ClientCache, HasCachePer
 
     }
 
-    boolean notRequired(LocalRegion region, RegionEntry re, BlockingQueue queue) {
+    boolean notRequired(LocalRegion region, RegionEntry re, BlockingQueue queue,Collection<TXState> runningTXs) {
       // 20% time just compare with the oldest tx.
       /*if (r.nextInt(100) < 20) {
         return notRequiredByOldest(region, re, queue);
       } else {*/
-        return notRequiredByAnyTx(region, re, queue);
+        return runningTXs.isEmpty() ||
+              notRequiredByAnyTx(region, re, queue,runningTXs);
       //}
     }
 
@@ -1054,17 +1065,17 @@ public class GemFireCacheImpl implements InternalCache, ClientCache, HasCachePer
     }
 
     boolean notRequiredByAnyTx( LocalRegion region, RegionEntry re,
-                                BlockingQueue<RegionEntry> queue) {
+                                BlockingQueue<RegionEntry> queue,
+                                Collection<TXState> runningTXs) {
       if (SNAPSHOT_DEBUG || getLoggerI18n().fineEnabled()) {
         getLoggerI18n().info(LocalizedStrings.DEBUG, "OldEntriesCleanerThread: Getting called for re "
             + re + " queue " + queue);
       }
       int myVersion = re.getVersionStamp().getEntryVersion();
       Set<TXId> txIds = new UnifiedSet<TXId>(4);
-      for (TXStateProxy txProxy : getTxManager().getHostedTransactionsInProgress()) {
-        TXState txState = txProxy.getLocalTXState();
-        if ((txState != null && !txState.isClosed() && TXState.checkEntryInSnapshot
-            (txState, region, re))) {
+      for (TXState txState : runningTXs) {
+        if (!txState.isClosed() && TXState.checkEntryInSnapshot
+            (txState, region, re)) {
           txIds.add(txState.getTransactionId());
         }
       }
@@ -1076,10 +1087,9 @@ public class GemFireCacheImpl implements InternalCache, ClientCache, HasCachePer
           }
 
           Set<TXId> othersTxIds = new UnifiedSet<TXId>(4);
-          for (TXStateProxy txProxy : getTxManager().getHostedTransactionsInProgress()) {
-            TXState txState = txProxy.getLocalTXState();
-            if ((txState != null && !txState.isClosed() && TXState.checkEntryInSnapshot
-                    (txState, region, otherOldEntry))) {
+          for (TXState txState : runningTXs) {
+            if (!txState.isClosed() && TXState.checkEntryInSnapshot
+                    (txState, region, otherOldEntry)) {
               othersTxIds.add(txState.getTransactionId());
             }
           }
@@ -1102,10 +1112,9 @@ public class GemFireCacheImpl implements InternalCache, ClientCache, HasCachePer
       }
 
       Set<TXId> othersTxIds = new UnifiedSet<TXId>(4);
-      for (TXStateProxy txProxy : getTxManager().getHostedTransactionsInProgress()) {
-        TXState txState = txProxy.getLocalTXState();
-        if ((txState != null && !txState.isClosed() && TXState.checkEntryInSnapshotWithoutOwnChange
-            (txState, region, entryInRegion))) {
+      for (TXState txState : runningTXs) {
+        if (!txState.isClosed() && TXState.checkEntryInSnapshotWithoutOwnChange
+            (txState, region, entryInRegion)) {
           othersTxIds.add(txState.getTransactionId());
         }
       }
