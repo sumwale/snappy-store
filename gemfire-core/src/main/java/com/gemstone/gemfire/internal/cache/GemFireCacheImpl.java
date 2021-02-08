@@ -914,7 +914,7 @@ public class GemFireCacheImpl implements InternalCache, ClientCache, HasCachePer
                   if (re.isUpdateInProgress()) {
                     continue;
                   } else {
-                    if (notRequired(region, re, null,runningTXs)) {
+                    if (notRequired(region, re, null, runningTXs)) {
                       removeEntry(regionEntryMap, re, region);
                     }
                   }
@@ -926,7 +926,7 @@ public class GemFireCacheImpl implements InternalCache, ClientCache, HasCachePer
                     if (re.isUpdateInProgress()) {
                       continue;
                     } else {
-                      if (notRequired(region, re, oldEntriesQueue,runningTXs)) {
+                      if (notRequired(region, re, oldEntriesQueue, runningTXs)) {
                         if (SNAPSHOT_DEBUG || getLoggerI18n().fineEnabled()) {
                           getLoggerI18n().info(LocalizedStrings.DEBUG,
                                   "OldEntriesCleanerThread : Removing the entry " + re);
