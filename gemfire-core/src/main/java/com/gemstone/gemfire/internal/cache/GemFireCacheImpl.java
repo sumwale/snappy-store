@@ -897,7 +897,7 @@ public class GemFireCacheImpl implements InternalCache, ClientCache, HasCachePer
 
             //Only load TXState once for each region-snapshot
             Collection<TXStateProxy> txProxies = getTxManager().getHostedTransactionsInProgress();
-            List<TXState> runningTXs=new ArrayList<>();
+            List<TXState> runningTXs = new ArrayList<>();
             for (TXStateProxy txProxy : txProxies) {
               TXState txState = txProxy.getLocalTXState();
               if (txState != null && !txState.isClosed() && txState.isSnapshot()) {
@@ -1003,13 +1003,14 @@ public class GemFireCacheImpl implements InternalCache, ClientCache, HasCachePer
 
     }
 
-    boolean notRequired(LocalRegion region, RegionEntry re, BlockingQueue queue,Collection<TXState> runningTXs) {
+    boolean notRequired(LocalRegion region, RegionEntry re, BlockingQueue queue,
+                        Collection<TXState> runningTXs) {
       // 20% time just compare with the oldest tx.
       /*if (r.nextInt(100) < 20) {
         return notRequiredByOldest(region, re, queue);
       } else {*/
         return runningTXs.isEmpty() ||
-              notRequiredByAnyTx(region, re, queue,runningTXs);
+              notRequiredByAnyTx(region, re, queue, runningTXs);
       //}
     }
 
