@@ -156,10 +156,10 @@ class POSIXNativeCalls extends NativeCalls {
   protected final RLimit rlimit = new RLimit();
 
   /**
-   * the <code>RehashServerOnSIGHUP</code> instance provided to
-   * {@link #daemonize}
+   * the <code>Runnable</code> instance provided to {@link #daemonize} to use
+   * for "rehashing" like reloading configuration when SIGHUP is caught
    */
-  private RehashServerOnSIGHUP rehashCallback;
+  private Runnable rehashCallback;
 
   /**
    * @see NativeCalls#getOSType()
@@ -274,7 +274,7 @@ class POSIXNativeCalls extends NativeCalls {
    * {@inheritDoc}
    */
   @Override
-  public void daemonize(RehashServerOnSIGHUP callback)
+  public void daemonize(Runnable sighupCallback)
       throws UnsupportedOperationException {
     UnsupportedOperationException err = null;
     try {
@@ -295,14 +295,14 @@ class POSIXNativeCalls extends NativeCalls {
       umask(oldMask);
     }
     // catch the SIGHUP signal and invoke any callback provided
-    this.rehashCallback = callback;
+    this.rehashCallback = sighupCallback;
     this.hupHandler = new SignalHandler() {
       @Override
       public void callback(int signum) {
         // invoke the rehash function if provided
-        final RehashServerOnSIGHUP rehashCb = rehashCallback;
+        final Runnable rehashCb = rehashCallback;
         if (signum == SIGHUP && rehashCb != null) {
-          rehashCb.rehash();
+          rehashCb.run();
         }
       }
     };

@@ -281,7 +281,7 @@ final class WinNativeCalls extends NativeCalls {
    * {@inheritDoc}
    */
   @Override
-  public void daemonize(RehashServerOnSIGHUP callback)
+  public void daemonize(Runnable sighupCallback)
       throws UnsupportedOperationException, IllegalStateException {
     throw new IllegalStateException(
         "daemonize() not applicable for Windows platform");

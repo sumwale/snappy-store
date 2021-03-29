@@ -320,9 +320,11 @@ public abstract class NativeCalls {
   /**
    * Perform the steps necessary to make the current JVM a proper UNIX daemon.
    * 
-   * @param callback
+   * @param sighupCallback
    *          register callback to be invoked on catching a SIGHUP signal;
-   *          SIGHUP signal is ignored if the callback is null
+   *          SIGHUP signal is ignored if the callback is null; this is provided
+   *          to allow re-reading configuration files or any other custom
+   *          actions to be performed if for SIGHUP
    * 
    * @throws UnsupportedOperationException
    *           if the native calls could not be completed for some reason or are
@@ -330,7 +332,7 @@ public abstract class NativeCalls {
    * @throws IllegalStateException
    *           for a non-UNIX platform
    */
-  public void daemonize(RehashServerOnSIGHUP callback)
+  public void daemonize(Runnable sighupCallback)
       throws UnsupportedOperationException, IllegalStateException {
     throw new UnsupportedOperationException(
         "daemonize() not available in base implementation");
@@ -473,23 +475,6 @@ public abstract class NativeCalls {
     // no generic POSIX specification for this
     throw new UnsupportedOperationException(
         "setSocketOption not supported for generic POSIX platform");
-  }
-
-  /**
-   * Callback invoked when an OS-level SIGHUP signal is caught after handler has
-   * been installed by {@link NativeCalls#daemonize}. This is provided to allow
-   * for re-reading configuration files or any other appropriate actions on
-   * receiving HUP signal as is the convention in other servers.
-   * 
-   * @author swale
-   * @since 7.5
-   */
-  public static interface RehashServerOnSIGHUP {
-
-    /**
-     * Perform the actions required to "rehash" the server.
-     */
-    public void rehash();
   }
 
   /**

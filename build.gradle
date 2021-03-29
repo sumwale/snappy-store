@@ -197,6 +197,11 @@ allprojects {
     }
   }
 
+  apply plugin: 'java'
+  apply plugin: 'com.github.johnrengelman.shadow'
+  apply plugin: 'maven'
+  apply plugin: 'idea'
+
   // force same output directory for IDEA and gradle
   idea {
     module {
@@ -207,11 +212,6 @@ allprojects {
 
   group = 'io.snappydata'
   version = PRODUCT_VERSION
-
-  apply plugin: 'java'
-  apply plugin: 'com.github.johnrengelman.shadow'
-  apply plugin: 'maven'
-  apply plugin: 'idea'
 }
 
 def writeProperties(def parent, def name, def comment, def propsMap) {
