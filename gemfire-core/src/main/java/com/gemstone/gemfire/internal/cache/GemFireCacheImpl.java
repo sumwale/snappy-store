@@ -1483,15 +1483,17 @@ public class GemFireCacheImpl implements InternalCache, ClientCache, HasCachePer
       if (memorySize > 0) {
         BufferAllocator bufferAllocator = null;
         try {
-          Iterator<BufferAllocator> allocators = ServiceLoader.load(
-              BufferAllocator.class, getClass().getClassLoader()).iterator();
-          if (allocators.hasNext()) {
-            bufferAllocator = allocators.next();
+          for (BufferAllocator allocator : ServiceLoader.load(
+              BufferAllocator.class, getClass().getClassLoader())) {
+            if (!allocator.isDirect()) continue;
             // test availability of configured memory-size
             getLogger().info("Configuring off-heap memory-size = " + memorySize);
             long address = UnsafeHolder.getUnsafe().allocateMemory(memorySize);
             UnsafeHolder.getUnsafe().freeMemory(address);
-            getLogger().info("Enabled memory-size = " + memorySize);
+            getLogger().info("Enabled memory-size = " + memorySize +
+                ", BufferAllocator implementation: " + allocator.getClass().getName());
+            bufferAllocator = allocator;
+            break;
           }
         } catch (RuntimeException e) {
           if (!usingDefaultMemorySize) {

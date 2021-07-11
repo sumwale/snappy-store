@@ -62,7 +62,7 @@ allprojects {
     protobufVersion = '2.6.1'
     kryoVersion = '4.0.2'
     thriftVersion = '0.9.3'
-    jnaVersion = '4.5.2'
+    jnaVersion = '5.8.0'
     jerseyVersion = '2.22.2'
     jsr305Version = '3.0.2'
     javaxServletVersion = '3.1.0'
